@@ -1,99 +1,100 @@
-window.jQuery = Zepto;
-var Gallery = {};
+if (typeof String.prototype.endsWith !== 'function') {
+    String.prototype.endsWith = function(suffix) {
+        return this.indexOf(suffix, this.length - suffix.length) !== -1;
+    };
+}
 
-Gallery.image = (function() {
-    "use strict";
-   var s;
-   if (typeof String.prototype.endsWith !== 'function') {
-        String.prototype.endsWith = function(suffix) {
-            return this.indexOf(suffix, this.length - suffix.length) !== -1;
-        };
-    }
-
+var Thesis = {};
+Thesis.Gallery = (function() {
+    var s = null;
+    
     return {
         settings: {
-            maxWidth: Math.floor(($(document).width()-12-40) / 2),
-            maxHeight: Math.floor((($(document).width()-12-40) / 2)*0.8),
+            maxWidth: 0,
+            maxHeight: 0,
             min: 0,
             max: 10,
             step: 10,
             fileList: []
         },
-        
+
         init: function () {
-            s = this.settings;
-
-            document.getElementById("ratio").innerHTML = s.maxWidth + " - " + s.maxHeight;
+            console.log("INIT");
             
+            s = this.settings;
+            s.maxWidth = Math.floor(($(document).width()-12-40) / 2);
+            s.maxHeight = Math.floor((($(document).width()-12-40) / 2)*0.8);
+  
+            document.getElementById("ratio").innerHTML = s.maxWidth + " - " + s.maxHeight;
 
-            if(Gallery.phonegap.isInitiated()) {
+            if(Thesis.PhoneGap.isInitiated()) {
                 var printDirPath = function(fileList){
                     console.log("DIRS: " + JSON.stringify(fileList) );
 
-                    Gallery.image.bindUIActions(fileList);
-                    Gallery.image.loadGallery(fileList, 10);
+                    Thesis.Gallery.bindUIActions(fileList);
+                    Thesis.Gallery.loadGallery(fileList, 10);
                 }
 
-                Gallery.phonegap.listDirectory("DCIM/Camera",printDirPath);  
+                Thesis.PhoneGap.listDirectory("DCIM/Camera","jpg",printDirPath);  
             } else {
                 var fileList = [
-                        {   name: "img1.jpg",
-                            fullPath: "img/img1.jpg" },
-                        {   name: "img2.jpg",
-                            fullPath: "img/img2.jpg" },
-                        {   name: "img3.jpg",
-                            fullPath: "img/img3.jpg" },
-                        {   name: "img4.jpg",
-                            fullPath: "img/img4.jpg" },
-                        {   name: "img1.jpg",
-                            fullPath: "img/img1.jpg" },
-                        {   name: "img2.jpg",
-                            fullPath: "img/img2.jpg" },
-                        {   name: "img3.jpg",
-                            fullPath: "img/img3.jpg" },
-                        {   name: "img4.jpg",
-                            fullPath: "img/img4.jpg" },
-                        {   name: "img1.jpg",
-                            fullPath: "img/img1.jpg" },
-                        {   name: "img1.jpg",
-                            fullPath: "img/img1.jpg" },
-                        {   name: "img2.jpg",
-                            fullPath: "img/img2.jpg" },
-                        {   name: "img3.jpg",
-                            fullPath: "img/img3.jpg" },
-                        {   name: "img4.jpg",
-                            fullPath: "img/img4.jpg" },
-                        {   name: "img1.jpg",
-                            fullPath: "img/img1.jpg" },
-                        {   name: "img2.jpg",
-                            fullPath: "img/img2.jpg" },
-                        {   name: "img3.jpg",
-                            fullPath: "img/img3.jpg" },
-                        {   name: "img4.jpg",
-                            fullPath: "img/img4.jpg" },
-                        {   name: "img1.jpg",
-                            fullPath: "img/img1.jpg" },
-                        {   name: "img2.jpg",
-                            fullPath: "img/img2.jpg" },
-                        {   name: "img3.jpg",
-                            fullPath: "img/img3.jpg" },
-                        {   name: "img4.jpg",
-                            fullPath: "img/img4.jpg" },
-                        {   name: "img1.jpg",
-                            fullPath: "img/img1.jpg" },
-                        {   name: "img2.jpg",
-                            fullPath: "img/img2.jpg" },
-                        {   name: "img3.jpg",
-                            fullPath: "img/img3.jpg" },
-                        {   name: "img4.jpg",
-                            fullPath: "img/img4.jpg" },
-                        {   name: "img1.jpg",
-                            fullPath: "img/img1.jpg" },
-                    ];
+                                {   name: "img1.jpg",
+                                    fullPath: "img/img1.jpg" },
+                                    {   name: "img2.jpg",
+                                        fullPath: "img/img2.jpg" },
+                                        {   name: "img3.jpg",
+                                            fullPath: "img/img3.jpg" },
+                                            {   name: "img4.jpg",
+                                                fullPath: "img/img4.jpg" },
+                                                {   name: "img1.jpg",
+                                                    fullPath: "img/img1.jpg" },
+                                                    {   name: "img2.jpg",
+                                                        fullPath: "img/img2.jpg" },
+                                                        {   name: "img3.jpg",
+                                                            fullPath: "img/img3.jpg" },
+                                                            {   name: "img4.jpg",
+                                                                fullPath: "img/img4.jpg" },
+                                                                {   name: "img1.jpg",
+                                                                    fullPath: "img/img1.jpg" },
+                                                                    {   name: "img1.jpg",
+                                                                        fullPath: "img/img1.jpg" },
+                                                                        {   name: "img2.jpg",
+                                                                            fullPath: "img/img2.jpg" },
+                                                                            {   name: "img3.jpg",
+                                                                                fullPath: "img/img3.jpg" },
+                                                                                {   name: "img4.jpg",
+                                                                                    fullPath: "img/img4.jpg" },
+                                                                                    {   name: "img1.jpg",
+                                                                                        fullPath: "img/img1.jpg" },
+                                                                                        {   name: "img2.jpg",
+                                                                                            fullPath: "img/img2.jpg" },
+                                                                                            {   name: "img3.jpg",
+                                                                                                fullPath: "img/img3.jpg" },
+                                                                                                {   name: "img4.jpg",
+                                                                                                    fullPath: "img/img4.jpg" },
+                                                                                                    {   name: "img1.jpg",
+                                                                                                        fullPath: "img/img1.jpg" },
+                                                                                                        {   name: "img2.jpg",
+                                                                                                            fullPath: "img/img2.jpg" },
+                                                                                                            {   name: "img3.jpg",
+                                                                                                                fullPath: "img/img3.jpg" },
+                                                                                                                {   name: "img4.jpg",
+                                                                                                                    fullPath: "img/img4.jpg" },
+                                                                                                                    {   name: "img1.jpg",
+                                                                                                                        fullPath: "img/img1.jpg" },
+                                                                                                                        {   name: "img2.jpg",
+                                                                                                                            fullPath: "img/img2.jpg" },
+                                                                                                                            {   name: "img3.jpg",
+                                                                                                                                fullPath: "img/img3.jpg" },
+                                                                                                                                {   name: "img4.jpg",
+                                                                                                                                    fullPath: "img/img4.jpg" },
+                                                                                                                                    {   name: "img1.jpg",
+                                                                                                                                        fullPath: "img/img1.jpg" },
+                                                                                                                                        ];
                 this.bindUIActions(fileList);
                 this.loadGallery(fileList, s.step);
             }
-            
+
         },
 
         bindUIActions: function (images) {
@@ -103,10 +104,10 @@ Gallery.image = (function() {
 
 
             $(window).scroll(function() {
-                var g = Gallery.image;
+                var g = Thesis.Gallery;
                 if($(window).scrollTop() == $(document).height() - $(window).height()) {
                     g.loadGallery(g.settings.fileList, g.settings.step);    
-                                            
+
                 }
             });
 
@@ -140,10 +141,10 @@ Gallery.image = (function() {
                         var sourceWidth = image.width * ratio;
                         var sourceHeight = image.height * ratio;
                     }
-                    
+
                     canvasFullscreen.width = image.width*ratio;
                     canvasFullscreen.height = image.height*ratio;
-/*
+                    /*
                     console.log("Ratio: " + ratio);
 
                     console.log("Max w: " + maxWidth);
@@ -154,14 +155,14 @@ Gallery.image = (function() {
 
                     console.log("Dest w: " + canvasFullscreen.width);
                     console.log("Dest h: " + canvasFullscreen.height);
-*/
+                     */
                     ctx.drawImage(image, 0,0, sourceWidth, sourceHeight);
-                   
+
                 };
-                
+
                 image.src = images[canvas.id].fullPath;
-              //  image.src = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-               // canvasFullscreen.parentNode.style.visibility='visible';
+                //  image.src = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+                // canvasFullscreen.parentNode.style.visibility='visible';
                 $("#fullscreen-img").parent().show();
 
                 console.log(ctx);
@@ -181,8 +182,9 @@ Gallery.image = (function() {
 
             if(images.length >= min) {
                 for (var i = min; i < images.length && i < max; i++) {
-
+                    console.log(images[i].name);
                     if(!images[i].fullPath.endsWith("jpg")) {
+                        console.log(images[i].name);
                         continue;
                     }
 
@@ -193,7 +195,7 @@ Gallery.image = (function() {
                     ctx[i] = canvas[i].getContext("2d");
 
                     imageObj[i] = new Image();
-                    
+
                     imageObj[i].onload = (function(n){
                         return function(){
                             canvas[n].width = s.maxWidth;
@@ -203,23 +205,23 @@ Gallery.image = (function() {
                             var sourceY = 0;
                             var destX = 0;
                             var destY = 0;
-                        // http://zsprawl.com/iOS/2012/03/cropping-scaling-images-with-canvas-html5/
-                        if (imageObj[n].height > imageObj[n].width) {
-                           // console.log("Portrait");
-                            var stretchRatio = ( imageObj[n].width / canvas[n].width );
-                            var sourceWidth = Math.floor(imageObj[n].width);
-                            var sourceHeight = Math.floor(canvas[n].height*stretchRatio);
-                            //sourceY = Math.floor((imageObj[n].height - sourceHeight)/2);
-                          } else {
-                            //console.log("Landscape");                    
-                            var stretchRatio = ( imageObj[n].height / canvas[n].height );
-                            var sourceWidth = Math.floor(canvas[n].width*stretchRatio);
-                            var sourceHeight = Math.floor(imageObj[n].height);
-                           // sourceX = Math.floor((imageObj[n].width - sourceWidth)/2);
-                          }            
-                          var destWidth = Math.floor(canvas[n].width);
-                          var destHeight = Math.floor(canvas[n].height);
-    /*
+                            // http://zsprawl.com/iOS/2012/03/cropping-scaling-images-with-canvas-html5/
+                            if (imageObj[n].height > imageObj[n].width) {
+                                // console.log("Portrait");
+                                var stretchRatio = ( imageObj[n].width / canvas[n].width );
+                                var sourceWidth = Math.floor(imageObj[n].width);
+                                var sourceHeight = Math.floor(canvas[n].height*stretchRatio);
+                                //sourceY = Math.floor((imageObj[n].height - sourceHeight)/2);
+                            } else {
+                                //console.log("Landscape");                    
+                                var stretchRatio = ( imageObj[n].height / canvas[n].height );
+                                var sourceWidth = Math.floor(canvas[n].width*stretchRatio);
+                                var sourceHeight = Math.floor(imageObj[n].height);
+                                // sourceX = Math.floor((imageObj[n].width - sourceWidth)/2);
+                            }            
+                            var destWidth = Math.floor(canvas[n].width);
+                            var destHeight = Math.floor(canvas[n].height);
+                            /*
                         console.log("Pixelratio: " + pixelRatio);
                         console.log("Ratio: " + stretchRatio);
 
@@ -235,7 +237,7 @@ Gallery.image = (function() {
 
                         console.log("sourceY: " + sourceY);
                         console.log("sourceX: " + sourceX);
-    */
+                             */
                             ctx[n].drawImage(imageObj[n], sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
                         }
                     }(i));
@@ -250,15 +252,17 @@ Gallery.image = (function() {
         LeakMemory: function (){
             for(var i = 0; i < 5000; i++){
                 var parentDiv = document.createElement("div");
-                    parentDiv.onclick = function() {
-                      foo();
-                    };
+                parentDiv.onclick = function() {
+                    foo();
+                };
             }
         }
     }
 })();
 
-Gallery.phonegap = (function() {
+console.log("SCRIPTS 3");
+
+Thesis.PhoneGap = (function() {
     var rootDir = null;
     var s;
 
@@ -274,7 +278,7 @@ Gallery.phonegap = (function() {
             s.initiated = true;
         },
 
-        listDirectory: function (path, callback) {
+        listDirectory: function (path, suffix, callback) {
             if(rootDir === null) {
                 console.log("Error! fileSystem not initiated! run init() first!");
                 return;
@@ -304,27 +308,29 @@ Gallery.phonegap = (function() {
             var successList = function (entries) {
                 var i;
                 var dirs = [];
-                for (i=0; i<entries.length; i++) {
-                    
-                    var dir = {
-                        name: entries[i].name,
-                        fullPath: entries[i].fullPath
-                    }
 
-                    dirs.push(dir);
+                for (i=entries.length-1; i >= 0; i--) {
+                    if(entries[i].name.endsWith(suffix)) {
+                        var dir = {
+                                name: entries[i].name,
+                                fullPath: entries[i].fullPath
+                        }
+
+                        dirs.push(dir);
+                    }
                 }
                 callback(dirs);
             }
 
             var failList = function(error) {
                 alert("Failed to list directory contents: " + error.code);
-             }
+            }
 
             getDir(dirs.pop());
         },
 
         onFileSystemSuccess: function(fileSystem) {
-            var g = Gallery.phonegap;
+            var g = Thesis.PhoneGap;
             console.log(fileSystem.name);
             console.log(fileSystem.root.fullPath);
 
@@ -349,22 +355,38 @@ function go() {
 }
 
 var interval = setInterval(go, 10)
-*/
+ */
 
-//window.onload = function(){
+//Tizen initialize function
+var init = function () {
+    // TODO:: Do your initialization job
+    console.log("init() called");
 
+    Thesis.Gallery.init();
+
+    // add eventListener for tizenhwkey
+    document.addEventListener('tizenhwkey', function(e) {
+        if(e.keyName == "back")
+            tizen.application.getCurrentApplication().exit();
+    });
+};
+$(document).bind('pageinit', init);
+
+//Init brower and phonegap
 $(function() {
-    if (navigator.userAgent.match(/(iPhone|iPod|iPad|Android|BlackBerry|IEMobile)/)) {
+    
+    if (navigator.userAgent.match(/(Tizen)/)) {
+        console.log("Script start!");
+    } else if (navigator.userAgent.match(/(iPhone|iPod|iPad|Android|BlackBerry|IEMobile)/)) {
         document.addEventListener("deviceready", function () {
-            Gallery.phonegap.init();  
-            Gallery.image.init();
+            Thesis.PhoneGap.init();  
+            Thesis.Gallery.init();
         }, false);
     } else {
-        Gallery.image.init();
+        Thesis.Gallery.init();
     }
-	
-});
 
+});
 
 
 
