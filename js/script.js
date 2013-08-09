@@ -360,12 +360,12 @@ Thesis.Gallery = (function() {
             s.max += step;
         },
         LeakMemory: function (){
-            for(var i = 0; i < 5000; i++){
-                var parentDiv = document.createElement("div");
-                parentDiv.onclick = function() {
-                    foo();
-                };
-            }
+            $('<div/>')
+                .html(new Array(1000).join('text')) // div with a text 
+                .click(function() { })
+        },
+        StartMemoryLeak: function () {
+            var interval = setInterval(this.LeakMemory, 10);
         }
     }
 })();
@@ -493,7 +493,6 @@ Thesis.Firefox = (function() {
             request.onerror = function() {
                 alert('Error checking installation status: ' + this.error.message);
             }
-
             
             console.log("<-- Firefox init done -->");
         },
@@ -566,7 +565,6 @@ Thesis.Firefox = (function() {
         }
     }
 })();
-
 //Tizen initialize function
 var init = function () {
     //TODO: Make this as a module
