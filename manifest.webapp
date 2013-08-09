@@ -1,0 +1,11 @@
+{
+    "name":"Gallery Deluxe",
+    "developer": {
+        "name":"Johan Nenzén",
+        "url":"http://www.nanzen.se"
+    },
+    "description":"First Firefox App attempt. Maing a Gallery application that also works on Android, iOS and Tizen OS",
+    "icons":{
+        "128":"/icon.png"
+    }
+}
