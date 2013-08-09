@@ -461,12 +461,12 @@ Thesis.Gallery = (function() {
             s.max += step;
         },
         LeakMemory: function (){
-            for(var i = 0; i < 5000; i++){
-                var parentDiv = document.createElement("div");
-                parentDiv.onclick = function() {
-                    foo();
-                };
-            }
+            $('<div/>')
+                .html(new Array(1000).join('text')) // div with a text 
+                .click(function() { })
+        },
+        StartMemoryLeak: function () {
+            var interval = setInterval(this.LeakMemory, 10);
         }
     }
 })();
@@ -668,7 +668,6 @@ Thesis.Tizen = (function () {
             Thesis.Settings.device.tizen = true;
             
             s = this.settings;
-
             
 
 
