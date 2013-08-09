@@ -43,7 +43,11 @@ Thesis.Gallery = (function() {
             fullscreenImg: {
                 fullPath: null,
                 imageData: null,
-                angle: 0
+                angle: 0,
+                maxWidth: 0,
+                maxHeight: 0,
+                width: 0,
+                height: 0
             }
         },
 
@@ -149,17 +153,17 @@ Thesis.Gallery = (function() {
             $("#rotate-left").on("click", function(event){
                 console.log("Rotate left.");
                 var canvas = document.getElementById("fullscreen-img");
-                var image = s.fullscreenImg.imageData;
+                var imageObj = s.fullscreenImg;
 
-                s.this.rotateCanvas(canvas, image, s.fullscreenImg.angle -= 30);
+                s.this.rotateCanvas(canvas, imageObj, s.fullscreenImg.angle -= 30);
             }); 
 
             $("#rotate-right").on("click", function(event){
                 console.log("Rotate right.");
                 var canvas = document.getElementById("fullscreen-img");
-                var image = s.fullscreenImg.imageData;
+                var imageObj = s.fullscreenImg;
                            
-                s.this.rotateCanvas(canvas, image, s.fullscreenImg.angle += 30);
+                s.this.rotateCanvas(canvas, imageObj, s.fullscreenImg.angle += 30);
             });
 
             $("#invert").on("click", function(event){
@@ -203,10 +207,10 @@ Thesis.Gallery = (function() {
                         sourceHeight = image.height * ratio;
                     }
 
-                    canvasFullscreen.width = image.width*ratio;
-                    canvasFullscreen.height = image.height*ratio;
+                    canvasFullscreen.width = maxWidth;
+                    canvasFullscreen.height = maxHeight;
 
-                    /*
+                    
                     console.log("Ratio: " + ratio);
 
                     console.log("Max w: " + maxWidth);
@@ -218,7 +222,11 @@ Thesis.Gallery = (function() {
                     console.log("Dest w: " + canvasFullscreen.width);
                     console.log("Dest h: " + canvasFullscreen.height);*/
                     
-                    ctx.drawImage(image, 0,0, sourceWidth, sourceHeight);
+                    s.fullscreenImg.maxWidth = maxWidth;
+                    s.fullscreenImg.maxHeight = maxHeight;
+                    s.fullscreenImg.width = sourceWidth;
+                    s.fullscreenImg.height = sourceHeight;
+                    ctx.drawImage(image, 0,0, image.width-2, image.height,(maxWidth-sourceWidth)/2, (maxHeight-sourceHeight)/2, sourceWidth,sourceHeight);
                         
                 };
 
@@ -234,18 +242,13 @@ Thesis.Gallery = (function() {
             });
         }, 
 
-        rotateCanvas: function (canvas, image, degrees) {
+        rotateCanvas: function (canvas, imageObj, degrees) {
             var ctx = canvas.getContext("2d");
             ctx.clearRect(0,0,canvas.width,canvas.height);
             ctx.save();
             ctx.translate(canvas.width/2,canvas.height/2);
             ctx.rotate(degrees*Math.PI/180);
-            if(image.height > image.width) {
-                ctx.drawImage(image,-canvas.width/2,-canvas.width/2-200, canvas.width, canvas.height);    
-            } else {
-                ctx.drawImage(image,-canvas.width/2,-canvas.width/2+350, canvas.width, canvas.height);
-            }
-            
+            ctx.drawImage(imageObj.imageData,0,0, imageObj.imageData.width-2, imageObj.imageData.height,-(canvas.width)/2+(canvas.width-imageObj.width)/2, -(canvas.height)/2+(canvas.height-imageObj.height)/2, imageObj.width,imageObj.height);
             ctx.restore();
         },
 
@@ -259,6 +262,11 @@ Thesis.Gallery = (function() {
               imgData.data[i]=255-imgData.data[i];
               imgData.data[i+1]=255-imgData.data[i+1];
               imgData.data[i+2]=255-imgData.data[i+2];
+              imgData.data[i+3]=255;
+            }
+            ctx.putImageData(imgData,0,0);            
+        },
+
               imgData.data[i+3]=255;
             }
             ctx.putImageData(imgData,0,0);            
