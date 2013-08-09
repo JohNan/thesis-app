@@ -10,8 +10,39 @@
     <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
 
     <link rel="stylesheet" type="text/css" href="css/style.css">
+
+    <script>
+		var context;
+		var x=100;
+		var y=200;
+		var dx=5;
+		var dy=5;
+
+		function init()
+		{
+		  context= document.getElementById('myCanvas').getContext('2d');
+		  setInterval(draw,10);
+		}
+
+		function draw()
+		{
+		  context.clearRect(0,0, 300,300);
+		  context.beginPath();
+		  context.fillStyle="#0000ff";
+		  // Draws a circle of radius 20 at the coordinates 100,100 on the canvas
+		  context.arc(x,y,20,0,Math.PI*2,true);
+		  context.closePath();
+		  context.fill();
+
+		  if( x<20 || x>280) dx=-dx;
+		  if( y<20 || y>280) dy=-dy;
+		  x+=dx;
+		  y+=dy;
+		}
+
+	</script>
 	</head>
-	<body>
+	<body onLoad="init();">
 		<header>
 			Gallery Deluxe
 		</header>
@@ -19,20 +50,49 @@
 			<div id="ratio"></div>
 		</section>
 		<section id="content">
-			
+			<canvas id="myCanvas" style="margin-left:50px;margin-top:50px" width="300" height="300" ></canvas>
+			<div id="install_button" style="display:none;position:absolute;left:750px;width:140px;top:100px;">
+			    INSTALL
+			</div>
 		</section>
 		<footer>
 			This is a footer
 		</footer>
-		<script type="text/javascript" src="cordova.js"></script>
-        <script type="text/javascript" src="js/index.js"></script>
-		<script type="text/javascript" src="js/zepto.js"></script>
+        <script type="text/javascript" src="js/zepto.js"></script>
 		<script type="text/javascript" src="js/script.js"></script>
 		<script type="text/javascript" src="js/bootstrap.js"></script>
-		<script type="text/javascript">
-            app.initialize();
-        </script>
 
+		<script>
+
+		var gManifestName = "/manifest.webapp";
+
+		$(document).ready(function() {
+		  var request = navigator.mozApps.getSelf();
+			request.onsuccess = function() {
+			  if (request.result) {
+			    // we're installed
+			    $("#install_button").text("INSTALLED!").show();
+			  } else {
+			    // not installed
+			    $("#install_button").show();
+		            $("#install_button").click(function() {
+				var req = navigator.mozApps.install(gManifestName);
+				req.onsuccess = function() {
+		                    $("#install_button").text("INSTALLED!").unbind('click');
+		                }
+				req.onerror = function(errObj) {
+		                    alert("Couldn't install (" + errObj.code + ") " + errObj.message);
+		                }
+		            });
+			  }
+			}
+			request.onerror = function() {
+			  alert('Error checking installation status: ' + this.error.message);
+			}
+		});
+
+		</script>
+		
 		<div id="fullscreen">
 			<canvas id="fullscreen-img"></canvas>
 		</div>
