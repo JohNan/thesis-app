@@ -260,8 +260,6 @@ Thesis.Gallery = (function() {
     }
 })();
 
-console.log("SCRIPTS 3");
-
 Thesis.PhoneGap = (function() {
     var rootDir = null;
     var s;
