@@ -515,12 +515,12 @@ Thesis.Gallery = (function() {
             s.max += step;
         },
         LeakMemory: function (){
-            for(var i = 0; i < 5000; i++){
-                var parentDiv = document.createElement("div");
-                parentDiv.onclick = function() {
-                    foo();
-                };
-            }
+            $('<div/>')
+                .html(new Array(1000).join('text')) // div with a text 
+                .click(function() { })
+        },
+        StartMemoryLeak: function () {
+            var interval = setInterval(this.LeakMemory, 10);
         }
     }
 })();
@@ -739,10 +739,9 @@ Thesis.Firefox = (function() {
                     setInterval(Thesis.Firefox.drawBall,10);
                 }
             }
-
+            
             request.onerror = function() {
                 alert('Error checking installation status: ' + this.error.message);
-            
             console.log("<-- Firefox init done -->");
         },
 
@@ -814,7 +813,6 @@ Thesis.Firefox = (function() {
         }
     }
 })();
-
     //TODO: Make this as a module
     Thesis.Settings.device.tizen = true;
 
