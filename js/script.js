@@ -417,6 +417,75 @@ Thesis.PhoneGap = (function() {
     }
 })();
 
+Thesis.Firefox = (function() {
+    var s;
+    var context;
+
+    return {
+        settings: {
+            gManifestName: location.protocol + "//" + location.host + location.pathname + "manifest.webapp",
+            x: 100,
+            y: 200,
+            dx: 5,
+            dy: 5
+        },
+
+        init: function () {
+            s = this.settings;
+            this.bindUIActions();
+
+            var request = navigator.mozApps.getSelf();
+
+            request.onsuccess = function() {
+                if (request.result) {
+                    // we're installed
+                    $("#install_button").text("INSTALLED!").show();
+                    $("#install-button-container").hide();
+                    Thesis.Gallery.init();                
+                } else {
+                    // not installed
+                    $("#install_button").show();
+                }
+            }
+            request.onerror = function() {
+                alert('Error checking installation status: ' + this.error.message);
+            }
+
+            context = document.getElementById('bouncing-ball').getContext('2d');
+            setInterval(this.drawBall,10);
+
+        },
+
+        bindUIActions: function () {
+            $("#install_button").click(function() {
+                console.log(s.gManifestName);
+                var req = navigator.mozApps.install(s.gManifestName);
+                req.onsuccess = function() {
+                    $("#install_button").text("INSTALLED!").unbind('click');
+                }
+                req.onerror = function(errObj) {
+                    alert("Couldn't install (" + errObj.code + ") " + errObj.message);
+                }
+            });
+        },
+
+        drawBall: function()
+        {
+          context.clearRect(0,0, 300,300);
+          context.beginPath();
+          context.fillStyle="#0000ff";
+          // Draws a circle of radius 20 at the coordinates 100,100 on the canvas
+          context.arc(s.x,s.y,20,0,Math.PI*2,true);
+          context.closePath();
+          context.fill();
+
+          if( s.x<20 || s.x>280) s.dx=-s.dx;
+          if( s.y<20 || s.y>280) s.dy=-s.dy;
+          s.x+=s.dx;
+          s.y+=s.dy;
+        }
+    }
+})();
 //Tizen initialize function
 var init = function () {
     // TODO:: Do your initialization job
@@ -434,8 +503,9 @@ $(document).bind('pageinit', init);
 
 //Init brower and phonegap
 $(function() {
-    
-    if (navigator.userAgent.match(/(Tizen)/)) {
+    if (navigator.userAgent.match(/(Firefox)/)) {
+        Thesis.Firefox.init();
+    } else if (navigator.userAgent.match(/(Tizen)/)) {
         console.log("Script start!");
     } else if (navigator.userAgent.match(/(iPhone|iPod|iPad|Android|BlackBerry|IEMobile)/)) {
         document.addEventListener("deviceready", function () {
