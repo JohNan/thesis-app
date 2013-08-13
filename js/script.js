@@ -119,15 +119,41 @@ Thesis.Gallery = (function() {
                 }
             });
 
-            $("#fullscreen-img").on("click", function(event){
+            $("#fullscreen-image-container").on("click", function(event){
                 $(this).parent().hide();
             });
+
+            $("#rotate-left").on("click", function(event){
+                console.log("Rotate left.");
+                var canvas = document.getElementById("fullscreen-img");
+                var image = s.fullscreenImg.imageData;
+
+                s.this.rotateCanvas(canvas, image, s.fullscreenImg.angle -= 30);
+            }); 
+
+            $("#rotate-right").on("click", function(event){
+                console.log("Rotate right.");
+                var canvas = document.getElementById("fullscreen-img");
+                var image = s.fullscreenImg.imageData;
+                           
+                s.this.rotateCanvas(canvas, image, s.fullscreenImg.angle += 30);
+            });
+
+            $("#invert").on("click", function(event){
+                console.log("Rotate right.");
+                var canvas = document.getElementById("fullscreen-img");
+                var image = s.fullscreenImg.imageData;
+
+                s.this.invertCanvas(canvas, image);
+            });          
 
             $("#content").on("click","canvas", function(event){
                 var canvas = $(this)[0];
 
                 console.log(canvas);
                 var canvasFullscreen = document.getElementById("fullscreen-img");
+                canvasFullscreen.setAttribute("data-id",canvas.id);
+                
                 var ctx = canvasFullscreen.getContext("2d");
                 var pixelRatio = window.devicePixelRatio;
                 ctx.scale(pixelRatio, pixelRatio);
@@ -136,22 +162,27 @@ Thesis.Gallery = (function() {
                 image.id = "pic"
 
                 image.onload = function () {
-                    var maxWidth = document.width-80;
-                    var maxHeight = document.height-40;
+                    var maxWidth = $(window).width()-100;
+                    var maxHeight = $(window).height()-100;
                     var ratio = 1;
 
-                    if (image.height > image.width && image.height > maxHeight) {
+                    ratio = maxWidth / image.width;
+                    var sourceWidth = image.width * ratio;
+                    var sourceHeight = image.height * ratio;
+
+                    if (image.height > image.width) {
                         ratio = maxHeight / image.height;
                         var sourceWidth = image.width * ratio;
                         var sourceHeight = image.height * ratio;
-                    } else  if (image.width > maxWidth) {
-                        ratio = maxWidth / image.width;
-                        var sourceWidth = image.width * ratio;
-                        var sourceHeight = image.height * ratio;
+                    } else if(sourceHeight > maxHeight) {
+                        ratio = maxHeight / image.height;
+                        sourceWidth = image.width * ratio;
+                        sourceHeight = image.height * ratio;
                     }
 
                     canvasFullscreen.width = image.width*ratio;
                     canvasFullscreen.height = image.height*ratio;
+
                     /*
                     console.log("Ratio: " + ratio);
 
@@ -162,20 +193,53 @@ Thesis.Gallery = (function() {
                     console.log("Src h: " + sourceHeight);
 
                     console.log("Dest w: " + canvasFullscreen.width);
-                    console.log("Dest h: " + canvasFullscreen.height);
-                     */
+                    console.log("Dest h: " + canvasFullscreen.height);*/
+                    
                     ctx.drawImage(image, 0,0, sourceWidth, sourceHeight);
-
+                        
                 };
 
+                
                 image.src = images[canvas.id].fullPath;
+                s.fullscreenImg.imageData = image;
+                
                 //  image.src = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
                 // canvasFullscreen.parentNode.style.visibility='visible';
-                $("#fullscreen-img").parent().show();
-
+                $("#fullscreen").show();
+                
                 console.log(ctx);
             });
         }, 
+
+        rotateCanvas: function (canvas, image, degrees) {
+            var ctx = canvas.getContext("2d");
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.save();
+            ctx.translate(canvas.width/2,canvas.height/2);
+            ctx.rotate(degrees*Math.PI/180);
+            if(image.height > image.width) {
+                ctx.drawImage(image,-canvas.width/2,-canvas.width/2-200, canvas.width, canvas.height);    
+            } else {
+                ctx.drawImage(image,-canvas.width/2,-canvas.width/2+350, canvas.width, canvas.height);
+            }
+            
+            ctx.restore();
+        },
+
+        invertCanvas: function (canvas, image) {
+            var ctx = canvas.getContext("2d");
+            ctx.drawImage(image,canvas.width,canvas.height);
+
+            var imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
+            // invert colors
+            for (var i=0;i<imgData.data.length;i+=4) {
+              imgData.data[i]=255-imgData.data[i];
+              imgData.data[i+1]=255-imgData.data[i+1];
+              imgData.data[i+2]=255-imgData.data[i+2];
+              imgData.data[i+3]=255;
+            }
+            ctx.putImageData(imgData,0,0);            
+        },
 
         loadGallery: function (images, step) {
             var canvas = [];
