@@ -220,7 +220,7 @@ Thesis.Gallery = (function() {
                     console.log("Src h: " + sourceHeight);
 
                     console.log("Dest w: " + canvasFullscreen.width);
-                    console.log("Dest h: " + canvasFullscreen.height);*/
+                    console.log("Dest h: " + canvasFullscreen.height);
                     
                     s.fullscreenImg.maxWidth = maxWidth;
                     s.fullscreenImg.maxHeight = maxHeight;
