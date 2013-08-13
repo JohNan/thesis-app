@@ -10,18 +10,26 @@ Thesis.Gallery = (function() {
     
     return {
         settings: {
+            this: null,
             maxWidth: 0,
             maxHeight: 0,
             min: 0,
             max: 10,
             step: 10,
-            fileList: []
+            fileList: [],
+            fullscreenImg: {
+                fullPath: null,
+                imageData: null,
+                angle: 0
+            }
         },
 
         init: function () {
             console.log("INIT");
             
             s = this.settings;
+            s.this = this;
+
             s.maxWidth = Math.floor(($(document).width()-12-40) / 2);
             s.maxHeight = Math.floor((($(document).width()-12-40) / 2)*0.8);
   
