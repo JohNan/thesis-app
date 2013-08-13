@@ -1,18 +1,22 @@
 {
     "version": "0.1",
     "name":"Gallery Deluxe",
-    "launch_path": "/thesis-app/index.html",
-    "appcache_path": "/thesis-app/offline.appcache",
     "developer": {
         "name":"Johan Nenzén",
         "url":"http://home.nanzen.se/"
     },
+    "locales": {
+    	"se_SE": {
+      		"name": "Galleri Deluxe"
+    	}
+  	},
+    "launch_path": "/index.html",
+    "appcache_path": "/thesis-app/offline.appcache",
     "installs_allowed_from": ["*"],
     "description":"First Firefox App attempt. Maing a Gallery application that also works on Android, iOS and Tizen OS",
     "icons":{
-        "128":"/img/icon-128.png"
-        "60":"/img/icon-60.png"
+        "128":"/img/icon-128.png",
+        "60":"/img/icon-60.png",
         "30":"/img/icon-30.png"
-    },
-    "type": "privileged"
+    }
 }

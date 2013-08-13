@@ -267,11 +267,6 @@ Thesis.Gallery = (function() {
             ctx.putImageData(imgData,0,0);            
         },
 
-              imgData.data[i+3]=255;
-            }
-            ctx.putImageData(imgData,0,0);            
-        },
-
         loadGallery: function (images, step) {
             var canvas = [];
             var ctx = [];
@@ -445,39 +440,6 @@ Thesis.PhoneGap = (function() {
 
     }
 })();
-
-Thesis.Firefox = (function() {
-    var s;
-    var context;
-
-    return {
-        settings: {
-            gManifestName: location.protocol + "//" + location.host + location.pathname + "manifest.webapp",
-            x: 100,
-            y: 200,
-            dx: 5,
-            dy: 5
-        },
-
-        init: function () {
-            Thesis.Settings.device.firefox = true;
-
-            s = this.settings;
-            this.bindUIActions();
-
-            var request = navigator.mozApps.getSelf();
-
-            request.onsuccess = function() {
-                if (request.result) {
-                    // we're installed
-                    $("#install_button").text("INSTALLED!").show();
-                    $("#install-button-container").hide();
-                    Thesis.Gallery.init();                
-                } else {
-                    // not installed
-                    $("#install_button").show();
-                }
-            }
 
 Thesis.Firefox = (function() {
     var s;
