@@ -5,6 +5,29 @@ if (typeof String.prototype.endsWith !== 'function') {
 }
 
 var Thesis = {};
+
+Thesis.Settings = (function () {
+    return {
+        device: {
+            phonegap: false,
+            tizen: false,
+            firefox: false,
+        },
+
+        isPhoneGap: function () {
+            return this.device.phonegap;
+        },
+
+        isTizen: function () {
+            return this.device.tizen;
+        },
+
+        isFireFox: function () {
+            return this.device.firefox;
+        }
+    }
+})();
+
 Thesis.Gallery = (function() {
     var s = null;
     
@@ -35,7 +58,7 @@ Thesis.Gallery = (function() {
   
             document.getElementById("ratio").innerHTML = s.maxWidth + " - " + s.maxHeight;
 
-            if(Thesis.PhoneGap.isInitiated()) {
+            if(Thesis.Settings.isPhoneGap()) {
                 var printDirPath = function(fileList){
                     console.log("DIRS: " + JSON.stringify(fileList) );
 
@@ -338,14 +361,15 @@ Thesis.PhoneGap = (function() {
 
     return {
         settings: {
-            initiated: false,
+            
         },
 
         init: function () {
+            Thesis.Settings.device.phonegap = true;
+
             s = this.settings;
             console.log("Load filesystem init");
             window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, this.onFileSystemSuccess, this.fail);
-            s.initiated = true;
         },
 
         listDirectory: function (path, suffix, callback) {
@@ -409,11 +433,8 @@ Thesis.PhoneGap = (function() {
 
         fail: function(evt) {
             console.log(evt.target.error.code);
-        },
-
-        isInitiated: function () {
-            return this.settings.initiated;
         }
+
     }
 })();
 
@@ -431,6 +452,8 @@ Thesis.Firefox = (function() {
         },
 
         init: function () {
+            Thesis.Settings.device.firefox = true;
+
             s = this.settings;
             this.bindUIActions();
 
@@ -490,6 +513,9 @@ Thesis.Firefox = (function() {
 
 //Tizen initialize function
 var init = function () {
+    //TODO: Make this as a module
+    Thesis.Settings.device.tizen = true;
+
     // TODO:: Do your initialization job
     console.log("init() called");
 
