@@ -622,8 +622,6 @@ Thesis.Firefox = (function() {
             y: 200,
             dx: 5,
             dy: 5
-        },
-
         init: function () {
             Thesis.Settings.device.firefox = true;
             
@@ -707,6 +705,7 @@ Thesis.Firefox = (function() {
           s.x+=s.dx;
           s.y+=s.dy;
         }
+
     }
 })();
 
@@ -724,6 +723,8 @@ Thesis.Firefox = (function() {
         },
 
         init: function () {
+            Thesis.Settings.device.firefox = true;
+
             s = this.settings;
             this.bindUIActions();
 
@@ -779,6 +780,9 @@ Thesis.Firefox = (function() {
         }
     }
 })();
+    //TODO: Make this as a module
+    Thesis.Settings.device.tizen = true;
+
 
 
             // add eventListener for tizenhwkey
