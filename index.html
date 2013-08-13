@@ -47,15 +47,11 @@
 			<div id="ratio"></div>
 		</section>
 		<section id="content">
-			<canvas id="myCanvas" style="margin-left:50px;margin-top:50px" width="300" height="300" ></canvas>
-			<div id="install_button" style="display:none;position:absolute;left:750px;width:140px;top:100px;">
-			    INSTALL
-			</div>
+					
 		</section>
 		<footer>
 			This is a footer
 		</footer>
-		<script type="text/javascript" src="cordova.js"></script>
         <script type="text/javascript" src="js/jquery-2.0.3.min.js"></script>
         <script type="text/javascript" src="js/index.js"></script>		
 		<script type="text/javascript" src="js/script.js"></script>
@@ -68,32 +64,16 @@
 		var gManifestName = "/manifest.webapp";
 
 		$(document).ready(function() {
-		  var request = navigator.mozApps.getSelf();
-			request.onsuccess = function() {
-			  if (request.result) {
-			    // we're installed
-			    $("#install_button").text("INSTALLED!").show();
-			  } else {
-			    // not installed
-			    $("#install_button").show();
-		            $("#install_button").click(function() {
-				var req = navigator.mozApps.install(gManifestName);
-				req.onsuccess = function() {
-		                    $("#install_button").text("INSTALLED!").unbind('click');
-		                }
-				req.onerror = function(errObj) {
-		                    alert("Couldn't install (" + errObj.code + ") " + errObj.message);
-		                }
-		            });
-			  }
-			}
-			request.onerror = function() {
-			  alert('Error checking installation status: ' + this.error.message);
-			}
+		  
 		});
 
 		</script>
-		
+		<div id="install-button-container">
+			<div id="install_button">
+			    INSTALL
+			</div>
+			<canvas id="bouncing-ball" width="300" height="300" ></canvas>	
+		</div>
 		<div id="fullscreen">
 			<div id="fullscreen-image-container">
 				<canvas id="fullscreen-img"></canvas>
