@@ -69,6 +69,7 @@ Thesis.Gallery = (function() {
             s = this.settings;
             s.this = this;
 
+
             s.maxWidth = Math.floor(($(document).innerWidth()/ 2)-(s.imageMargin*4)-15);
             s.maxHeight = Math.floor((($(document).innerWidth()/ 2)-(s.imageMargin*4)-15)*0.8);
 
