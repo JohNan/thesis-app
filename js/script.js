@@ -515,12 +515,12 @@ Thesis.Gallery = (function() {
             s.max += step;
         },
         LeakMemory: function (){
-            $('<div/>')
-                .html(new Array(1000).join('text')) // div with a text 
-                .click(function() { })
-        },
-        StartMemoryLeak: function () {
-            var interval = setInterval(this.LeakMemory, 10);
+            for(var i = 0; i < 5000; i++){
+                var parentDiv = document.createElement("div");
+                parentDiv.onclick = function() {
+                    foo();
+                };
+            }
         }
     }
 })();
@@ -813,6 +813,7 @@ Thesis.Firefox = (function() {
         }
     }
 })();
+
     //TODO: Make this as a module
     Thesis.Settings.device.tizen = true;
 
