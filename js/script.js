@@ -74,7 +74,6 @@ Thesis.Gallery = (function() {
             s.maxHeight = Math.floor((($(document).innerWidth()/ 2)-(s.imageMargin*4)-15)*0.8);
 
             console.log(s.maxWidth);
-
             if(Thesis.Settings.isPhoneGap()) {
                 this.listDirectory = Thesis.PhoneGap.listDirectory;
                 s.pictureDir = "DCIM/Camera";
@@ -721,10 +720,7 @@ Thesis.Firefox = (function() {
             dy: 5
         },
 
-        init: function () {                    
-            console.log("<-- Firefox init start -->");
-            Thesis.Settings.device.firefox = true;
-
+        init: function () {
             s = this.settings;
             this.bindUIActions();
 
@@ -746,8 +742,6 @@ Thesis.Firefox = (function() {
 
             request.onerror = function() {
                 alert('Error checking installation status: ' + this.error.message);
-            }
-
             
             console.log("<-- Firefox init done -->");
         },
