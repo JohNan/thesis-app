@@ -39,6 +39,7 @@ Thesis.Gallery = (function() {
     return {
         settings: {
             this: null,
+            imageMargin: 6,
             maxWidth: 0,
             maxHeight: 0,
             min: 0,
@@ -66,10 +67,8 @@ Thesis.Gallery = (function() {
             s = this.settings;
             s.this = this;
 
-            s.maxWidth = Math.floor(($(document).width()-12-40) / 2);
-            s.maxHeight = Math.floor((($(document).width()-12-40) / 2)*0.8);
-  
-            document.getElementById("ratio").innerHTML = s.maxWidth + " - " + s.maxHeight;
+            s.maxWidth = Math.floor(($(document).innerWidth()/ 2)-(s.imageMargin*4));
+            s.maxHeight = Math.floor(($(document).innerWidth()/ 2)-(s.imageMargin*4)*0.8);
 
             if(Thesis.Settings.isPhoneGap()) {
                 this.listDirectory = Thesis.PhoneGap.listDirectory;
@@ -246,14 +245,12 @@ Thesis.Gallery = (function() {
                         
                 };
 
-                console.log()
                 image.src = images[canvas.id].fullPath;
                 s.fullscreenImg.imageData = image;
-                
-                $("#fullscreen").css("top",$(window).scrollTop());
+               
                 $("#fullscreen").show();
                 
-                console.log(ctx);
+                console.log($(window).scrollTop());
             });
         }, 
 
@@ -467,10 +464,7 @@ Thesis.Firefox = (function() {
             dy: 5
         },
 
-        init: function () {                    
-            console.log("<-- Firefox init start -->");
-            Thesis.Settings.device.firefox = true;
-
+        init: function () {
             s = this.settings;
             this.bindUIActions();
 
@@ -487,37 +481,6 @@ Thesis.Firefox = (function() {
                     $("#install_button").show();
                     context = document.getElementById('bouncing-ball').getContext('2d');
                     setInterval(Thesis.Firefox.drawBall,10);
-                }
-            }
-
-Thesis.Firefox = (function() {
-    var s;
-    var context;
-
-    return {
-        settings: {
-            gManifestName: location.protocol + "//" + location.host + location.pathname + "manifest.webapp",
-            x: 100,
-            y: 200,
-            dx: 5,
-            dy: 5
-        },
-
-        init: function () {
-            s = this.settings;
-            this.bindUIActions();
-
-            var request = navigator.mozApps.getSelf();
-
-            request.onsuccess = function() {
-                if (request.result) {
-                    // we're installed
-                    $("#install_button").text("INSTALLED!").show();
-                    $("#install-button-container").hide();
-                    Thesis.Gallery.init();                
-                } else {
-                    // not installed
-                    $("#install_button").show();
                 }
             }
 
