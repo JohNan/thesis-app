@@ -465,6 +465,8 @@ Thesis.Firefox = (function() {
         },
 
         init: function () {
+            Thesis.Settings.device.firefox = true;
+            
             s = this.settings;
             this.bindUIActions();
 
@@ -528,15 +530,6 @@ Thesis.Firefox = (function() {
             cursor.onerror = function () {
                 console.warn("No file found: " + this.error);
             }
-
-            var isCursorDone = function () {
-                console.log("Checkck cursor: " + cursor.readyState);
-                if(cursor.readyState === "done") {
-                    callback(dirs);
-                }
-            }
-
-            //setInterval(isCursorDone, 1);
         },
 
         drawBall: function()
