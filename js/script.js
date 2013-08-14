@@ -291,9 +291,8 @@ Thesis.Gallery = (function() {
             $("#invert").on("click", function(event){
                 console.log("Rotate right.");
                 var canvas = document.getElementById("fullscreen-img");
-                var image = s.fullscreenImg.imageData;
 
-                s.this.invertCanvas(canvas, image);
+                s.this.invertCanvas(canvas, imageObj);
             });          
 
             $("#content").on("click","canvas", function(event){
@@ -425,11 +424,11 @@ Thesis.Gallery = (function() {
             ctx.restore();
         },
 
-        invertCanvas: function (canvas, image) {
             var ctx = canvas.getContext("2d");
-            ctx.drawImage(image,canvas.width,canvas.height);
-
-            var imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
+            //ctx.drawImage(image,canvas.width,canvas.height);
+            console.log(canvas.width);
+            console.log(imageObj.width);
+            var imgData = ctx.getImageData((canvas.width/2)-((imageObj.width-1)/2),(canvas.height/2)-(imageObj.height/2),imageObj.width,imageObj.height);
             // invert colors
             for (var i=0;i<imgData.data.length;i+=4) {
               imgData.data[i]=255-imgData.data[i];
@@ -437,7 +436,7 @@ Thesis.Gallery = (function() {
               imgData.data[i+2]=255-imgData.data[i+2];
               imgData.data[i+3]=255;
             }
-            ctx.putImageData(imgData,0,0);            
+            ctx.putImageData(imgData,(canvas.width/2)-((imageObj.width-1)/2),(canvas.height/2)-(imageObj.height/2));            
         },
 
         loadGallery: function (images, step) {
@@ -517,12 +516,12 @@ Thesis.Gallery = (function() {
             s.max += step;
         },
         LeakMemory: function (){
-            $('<div/>')
-                .html(new Array(1000).join('text')) // div with a text 
-                .click(function() { })
-        },
-        StartMemoryLeak: function () {
-            var interval = setInterval(this.LeakMemory, 10);
+            for(var i = 0; i < 5000; i++){
+                var parentDiv = document.createElement("div");
+                parentDiv.onclick = function() {
+                    foo();
+                };
+            }
         }
     }
 })();
@@ -722,7 +721,8 @@ Thesis.Firefox = (function() {
             dy: 5
         },
 
-        init: function () {
+        init: function () {                    
+            console.log("<-- Firefox init start -->");
             Thesis.Settings.device.firefox = true;
 
             s = this.settings;
@@ -739,15 +739,17 @@ Thesis.Firefox = (function() {
                 } else {
                     // not installed
                     $("#install_button").show();
+                    context = document.getElementById('bouncing-ball').getContext('2d');
+                    setInterval(Thesis.Firefox.drawBall,10);
                 }
             }
+
             request.onerror = function() {
                 alert('Error checking installation status: ' + this.error.message);
             }
 
-            context = document.getElementById('bouncing-ball').getContext('2d');
-            setInterval(this.drawBall,10);
-
+            
+            console.log("<-- Firefox init done -->");
         },
 
         bindUIActions: function () {
@@ -761,6 +763,44 @@ Thesis.Firefox = (function() {
                     alert("Couldn't install (" + errObj.code + ") " + errObj.message);
                 }
             });
+        },
+
+        listDirectory: function (path, suffix, callback) {
+            var pics = navigator.getDeviceStorage(path);
+            var cursor = pics.enumerate();
+            var dirs = [];
+            var allowedFileTypes = ["image/png", "image/jpeg", "image/gif"];
+            var state;
+
+            cursor.onsuccess = function () {
+                var file = this.result;
+                if (!file) {
+                    callback(dirs);
+                } else {
+                    if(allowedFileTypes.indexOf(file.type) > -1) {
+                        var dir = {
+                                name: file.name,
+                                fullPath: window.URL.createObjectURL(file)
+                        }
+
+                        dirs.push(dir);
+                    }
+                    this.continue();
+                } 
+            }
+
+            cursor.onerror = function () {
+                console.warn("No file found: " + this.error);
+            }
+
+            var isCursorDone = function () {
+                console.log("Checkck cursor: " + cursor.readyState);
+                if(cursor.readyState === "done") {
+                    callback(dirs);
+                }
+            }
+
+            //setInterval(isCursorDone, 1);
         },
 
         drawBall: function()
@@ -780,6 +820,7 @@ Thesis.Firefox = (function() {
         }
     }
 })();
+
     //TODO: Make this as a module
     Thesis.Settings.device.tizen = true;
 
