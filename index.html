@@ -30,25 +30,28 @@
 
 <body>
     <div data-role="page">
-        <div data-role="header" data-position="fixed">
+        <div id="header" data-role="header" data-position="fixed">
             <h1>Gallery Deluxe</h1>
-        </div><!-- /header -->
-		<section id="debug">
-			<div id="ratio"></div>
-		</section>
+        </div><!-- /header -->		
         <div data-role="content">
             <section id="content">
             
             </section>
         </div><!-- /content -->
-
-        <div data-role="footer" data-position="fixed">
-            <h4>This is a footer</h4>
-        </div><!-- /footer -->
+       <div id="image-panel" data-role="footer" data-position="fixed">
+			<button id="rotate-left">Rotate left</button>
+			<button id="rotate-right">Rotate right</button>
+			<button id="invert">Invert</button>
+		</div>
     </div><!-- /page -->
     
     <div id="fullscreen">
-		<canvas id="fullscreen-img"></canvas>
+		<div id="fullscreen-image-container">
+			<canvas id="fullscreen-img"></canvas>
+		</div>
+		<div id="fullscreen-image-container-2">
+			<canvas id="fullscreen-img-2"></canvas>
+		</div>
 	</div>
 </body>
 </html>

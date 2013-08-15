@@ -5,38 +5,80 @@ if (typeof String.prototype.endsWith !== 'function') {
 }
 
 var Thesis = {};
+
+Thesis.Settings = (function () {
+    return {
+        device: {
+            phonegap: false,
+            tizen: false,
+            firefox: false,
+            desktop: false,
+        },
+
+        isPhoneGap: function () {
+            return this.device.phonegap;
+        },
+
+        isTizen: function () {
+            return this.device.tizen;
+        },
+
+        isFireFox: function () {
+            return this.device.firefox;
+        },
+
+        isDesktop: function () {
+            return this.device.desktop;
+        }
+    }
+})();
+
 Thesis.Gallery = (function() {
     var s = null;
     
     return {
         settings: {
+            obj: null,
+            imageMargin: 6,
             maxWidth: 0,
             maxHeight: 0,
             min: 0,
             max: 10,
             step: 10,
-            fileList: []
+            fileList: [],
+            fullscreenImg: {
+                fullPath: null,
+                imageData: null,
+                angle: 0,
+                maxWidth: 0,
+                maxHeight: 0,
+                width: 0,
+                height: 0
+            },
+            pictureDir: "",
+        },
+        listDirectory: function () {
+            
         },
 
         init: function () {
-            console.log("INIT");
+            console.log("<-- Gallery init start -->");
             
             s = this.settings;
-            s.maxWidth = Math.floor(($(document).width()-12-40) / 2);
-            s.maxHeight = Math.floor((($(document).width()-12-40) / 2)*0.8);
-  
-            document.getElementById("ratio").innerHTML = s.maxWidth + " - " + s.maxHeight;
+            s.obj = this;
 
-            if(Thesis.PhoneGap.isInitiated()) {
-                var printDirPath = function(fileList){
-                    console.log("DIRS: " + JSON.stringify(fileList) );
+            s.maxWidth = Math.floor(($(document).innerWidth()/ 2)-(s.imageMargin*4));
+            s.maxHeight = Math.floor(($(document).innerWidth()/ 2)-(s.imageMargin*4)*0.8);
 
-                    Thesis.Gallery.bindUIActions(fileList);
-                    Thesis.Gallery.loadGallery(fileList, 10);
-                }
+            if(Thesis.Settings.isPhoneGap()) {
+                this.listDirectory = Thesis.PhoneGap.listDirectory;
+                s.pictureDir = "DCIM/Camera";
+            } else if(Thesis.Settings.isFireFox()) {
+                this.listDirectory = Thesis.Firefox.listDirectory;
+                s.pictureDir = "pictures";
+            }
 
-                Thesis.PhoneGap.listDirectory("DCIM/Camera","jpg",printDirPath);  
-            } else {
+            if(Thesis.Settings.isDesktop()) {
                 var fileList = [
                                 {   name: "img1.jpg",
                                     fullPath: "img/img1.jpg" },
@@ -93,8 +135,16 @@ Thesis.Gallery = (function() {
                                                                                                                                         ];
                 this.bindUIActions(fileList);
                 this.loadGallery(fileList, s.step);
-            }
+            } else {
+                var printDirPath = function(fileList){
+                    console.log("DIRS: " + JSON.stringify(fileList) );
 
+                    Thesis.Gallery.bindUIActions(fileList);
+                    Thesis.Gallery.loadGallery(fileList, 10);
+                }
+
+                this.listDirectory(s.pictureDir,"jpg",printDirPath);
+            } 
         },
 
         bindUIActions: function (images) {
@@ -110,16 +160,80 @@ Thesis.Gallery = (function() {
 
                 }
             });
-
-            $("#fullscreen-img").on("click", function(event){
-                $(this).parent().hide();
+            
+            var gnStartX = 0;
+            var gnStartY = 0;
+            var gnEndX = 0;
+            var gnEndY = 0;
+            
+            
+            
+            $("#fullscreen-image-container").on('vmousedown', function(event){
+            	event.preventDefault();
+                event.stopPropagation();
+                
+            	gnStartX = event.pageX;
+                gnStartY = event.pageY;
+                
+                $("#fullscreen-image-container").unbind("click");
+                
+                
+                
+                
+            });
+            
+            $("#fullscreen-image-container").bind('vmousemove', function(event){
+            	event.preventDefault();
+                event.stopPropagation();
+                var el = $("#fullscreen");
+                var offset = el.offset();
+                var x = event.pageX - offset.left;
+            	
+            	console.log(x);
+            	console.log("parse: " + parseFloat(el.css("left")));
+            	
+            	el.css({"left":(x)});
+            	
+            	
             });
 
-            $("#content").on("click","canvas", function(event){
-                var canvas = $(this)[0];
-
-                console.log(canvas);
+            $("#fullscreen-image-container").on('vmouseup', function(event){
+                gnEndX = event.pageX;
+                gnEndY = event.pageY; 
+                
+                $("#fullscreen-image-container").unbind('vmousemove');
+            
+                event.preventDefault();  
+                event.stopPropagation();
+            });
+            /*
+            $("#fullscreen-image-container").on("swipe", function(e) {
+            	console.log(e);
+            	var touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0];
+            	console.log(touch);
+            });
+            
+            $('#fullscreen-image-container').bind('touchmove',function(e){
+            	console.log("touchmove");
+                e.preventDefault();
+                var touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0];
+                var elm = $(this).offset();
+                var x = touch.pageX - elm.left;
+                var y = touch.pageY - elm.top;
+                if(x < $(this).width() && x > 0){
+                    if(y < $(this).height() && y > 0){
+                            //CODE GOES HERE
+                            console.log(touch.pageY+' '+touch.pageX);
+                    }
+                }
+          });
+            
+            $("#fullscreen-image-container").swiperight(function() {
+                $.mobile.changePage("#page1");
+                
                 var canvasFullscreen = document.getElementById("fullscreen-img");
+                canvasFullscreen.setAttribute("data-id",canvas.id);
+                
                 var ctx = canvasFullscreen.getContext("2d");
                 var pixelRatio = window.devicePixelRatio;
                 ctx.scale(pixelRatio, pixelRatio);
@@ -128,22 +242,105 @@ Thesis.Gallery = (function() {
                 image.id = "pic"
 
                 image.onload = function () {
-                    var maxWidth = document.width-80;
-                    var maxHeight = document.height-40;
+                    var maxWidth = $(window).width()-100;
+                    var maxHeight = $(window).height()-100;
                     var ratio = 1;
 
-                    if (image.height > image.width && image.height > maxHeight) {
+                    ratio = maxWidth / image.width;
+                    var sourceWidth = image.width * ratio;
+                    var sourceHeight = image.height * ratio;
+
+                    if (image.height > image.width) {
                         ratio = maxHeight / image.height;
                         var sourceWidth = image.width * ratio;
                         var sourceHeight = image.height * ratio;
-                    } else  if (image.width > maxWidth) {
-                        ratio = maxWidth / image.width;
-                        var sourceWidth = image.width * ratio;
-                        var sourceHeight = image.height * ratio;
+                    } else if(sourceHeight > maxHeight) {
+                        ratio = maxHeight / image.height;
+                        sourceWidth = image.width * ratio;
+                        sourceHeight = image.height * ratio;
                     }
 
-                    canvasFullscreen.width = image.width*ratio;
-                    canvasFullscreen.height = image.height*ratio;
+                    canvasFullscreen.width = maxWidth;
+                    canvasFullscreen.height = maxHeight;
+
+                    
+                    s.fullscreenImg.maxWidth = maxWidth;
+                    s.fullscreenImg.maxHeight = maxHeight;
+                    s.fullscreenImg.width = sourceWidth;
+                    s.fullscreenImg.height = sourceHeight;
+                    ctx.drawImage(image, 0,0, image.width-2, image.height,(maxWidth-sourceWidth)/2, (maxHeight-sourceHeight)/2, sourceWidth,sourceHeight);
+                        
+                };
+
+                image.src = images[canvas.id].fullPath;
+                s.fullscreenImg.imageData = image;
+            });
+*/
+            $("#fullscreen-image-container").on("click", function(event){
+                $(this).parent().hide();
+                $("#image-panel").hide();
+            });
+
+            $("#rotate-left").on("click", function(event){
+                console.log("Rotate left.");
+                var canvas = document.getElementById("fullscreen-img");
+                var imageObj = s.fullscreenImg;
+
+                s.obj.rotateCanvas(canvas, imageObj, s.fullscreenImg.angle -= 30);
+            }); 
+
+            $("#rotate-right").on("click", function(event){
+                console.log("Rotate right.");
+                var canvas = document.getElementById("fullscreen-img");
+                var imageObj = s.fullscreenImg;
+                           
+                s.obj.rotateCanvas(canvas, imageObj, s.fullscreenImg.angle += 30);
+            });
+
+            $("#invert").on("click", function(event){
+                console.log("Rotate right.");
+                var canvas = document.getElementById("fullscreen-img");
+                var imageObj = s.fullscreenImg;
+
+                s.obj.invertCanvas(canvas, imageObj);
+            });          
+
+            $("#content").on("click","canvas", function(event){
+                var canvas = $(this)[0];
+
+                console.log(canvas);
+                var canvasFullscreen = document.getElementById("fullscreen-img");
+                canvasFullscreen.setAttribute("data-id",canvas.id);
+                
+                var ctx = canvasFullscreen.getContext("2d");
+                var pixelRatio = window.devicePixelRatio;
+                ctx.scale(pixelRatio, pixelRatio);
+
+                var image = new Image();
+                image.id = "pic"
+
+                image.onload = function () {
+                    var maxWidth = $(window).width()-100;
+                    var maxHeight = $(window).height()-100;
+                    var ratio = 1;
+
+                    ratio = maxWidth / image.width;
+                    var sourceWidth = image.width * ratio;
+                    var sourceHeight = image.height * ratio;
+
+                    if (image.height > image.width) {
+                        ratio = maxHeight / image.height;
+                        var sourceWidth = image.width * ratio;
+                        var sourceHeight = image.height * ratio;
+                    } else if(sourceHeight > maxHeight) {
+                        ratio = maxHeight / image.height;
+                        sourceWidth = image.width * ratio;
+                        sourceHeight = image.height * ratio;
+                    }
+
+                    canvasFullscreen.width = maxWidth;
+                    canvasFullscreen.height = maxHeight;
+
                     /*
                     console.log("Ratio: " + ratio);
 
@@ -154,20 +351,49 @@ Thesis.Gallery = (function() {
                     console.log("Src h: " + sourceHeight);
 
                     console.log("Dest w: " + canvasFullscreen.width);
-                    console.log("Dest h: " + canvasFullscreen.height);
-                     */
-                    ctx.drawImage(image, 0,0, sourceWidth, sourceHeight);
-
+                    console.log("Dest h: " + canvasFullscreen.height);*/
+                    
+                    s.fullscreenImg.maxWidth = maxWidth;
+                    s.fullscreenImg.maxHeight = maxHeight;
+                    s.fullscreenImg.width = sourceWidth;
+                    s.fullscreenImg.height = sourceHeight;
+                    ctx.drawImage(image, 0,0, image.width-2, image.height,(maxWidth-sourceWidth)/2, (maxHeight-sourceHeight)/2, sourceWidth,sourceHeight);
+                        
                 };
 
                 image.src = images[canvas.id].fullPath;
-                //  image.src = canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
-                // canvasFullscreen.parentNode.style.visibility='visible';
-                $("#fullscreen-img").parent().show();
-
-                console.log(ctx);
+                s.fullscreenImg.imageData = image;
+               
+                $("#fullscreen").show();
+                $("#image-panel").show();                
             });
         }, 
+
+        rotateCanvas: function (canvas, imageObj, degrees) {
+            var ctx = canvas.getContext("2d");
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.save();
+            ctx.translate(canvas.width/2,canvas.height/2);
+            ctx.rotate(degrees*Math.PI/180);
+            ctx.drawImage(imageObj.imageData,0,0, imageObj.imageData.width-2, imageObj.imageData.height,-(canvas.width)/2+(canvas.width-imageObj.width)/2, -(canvas.height)/2+(canvas.height-imageObj.height)/2, imageObj.width,imageObj.height);
+            ctx.restore();
+        },
+
+        invertCanvas: function (canvas, imageObj) {
+            var ctx = canvas.getContext("2d");
+            //ctx.drawImage(image,canvas.width,canvas.height);
+            console.log(canvas.width);
+            console.log(imageObj.width);
+            var imgData = ctx.getImageData((canvas.width/2)-((imageObj.width-1)/2),(canvas.height/2)-(imageObj.height/2),imageObj.width,imageObj.height);
+            // invert colors
+            for (var i=0;i<imgData.data.length;i+=4) {
+              imgData.data[i]=255-imgData.data[i];
+              imgData.data[i+1]=255-imgData.data[i+1];
+              imgData.data[i+2]=255-imgData.data[i+2];
+              imgData.data[i+3]=255;
+            }
+            ctx.putImageData(imgData,(canvas.width/2)-((imageObj.width-1)/2),(canvas.height/2)-(imageObj.height/2));            
+        },
 
         loadGallery: function (images, step) {
             var canvas = [];
@@ -182,11 +408,7 @@ Thesis.Gallery = (function() {
 
             if(images.length >= min) {
                 for (var i = min; i < images.length && i < max; i++) {
-                    console.log(images[i].name);
-                    if(!images[i].fullPath.endsWith("jpg")) {
-                        console.log(images[i].name);
-                        continue;
-                    }
+                    console.log(images[i].name);                    
 
                     canvas[i] = document.createElement("canvas");
                     canvas[i].id = i;
@@ -250,17 +472,15 @@ Thesis.Gallery = (function() {
             s.max += step;
         },
         LeakMemory: function (){
-            $('<div/>')
-                .html(new Array(1000).join('text')) // div with a text 
-                .click(function() { })
-        },
-        StartMemoryLeak: function () {
-            var interval = setInterval(this.LeakMemory, 10);
+            for(var i = 0; i < 5000; i++){
+                var parentDiv = document.createElement("div");
+                parentDiv.onclick = function() {
+                    foo();
+                };
+            }
         }
     }
 })();
-
-console.log("SCRIPTS 3");
 
 Thesis.PhoneGap = (function() {
     var rootDir = null;
@@ -268,14 +488,16 @@ Thesis.PhoneGap = (function() {
 
     return {
         settings: {
-            initiated: false,
+            
         },
 
         init: function () {
+            console.log("<-- PhoneGap init start -->");
+            Thesis.Settings.device.phonegap = true;
+
             s = this.settings;
             console.log("Load filesystem init");
             window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, this.onFileSystemSuccess, this.fail);
-            s.initiated = true;
         },
 
         listDirectory: function (path, suffix, callback) {
@@ -339,16 +561,115 @@ Thesis.PhoneGap = (function() {
 
         fail: function(evt) {
             console.log(evt.target.error.code);
+        }
+
+    }
+})();
+
+Thesis.Firefox = (function() {
+    var s;
+    var context;
+
+    return {
+        settings: {
+            gManifestName: location.protocol + "//" + location.host + location.pathname + "manifest.webapp",
+            x: 100,
+            y: 200,
+            dx: 5,
+            dy: 5
         },
 
-        isInitiated: function () {
-            return this.settings.initiated;
+        init: function () {
+            Thesis.Settings.device.firefox = true;
+            
+            s = this.settings;
+            this.bindUIActions();
+
+            var request = navigator.mozApps.getSelf();
+
+            request.onsuccess = function() {
+                if (request.result) {
+                    // we're installed
+                    $("#install_button").text("INSTALLED!").show();
+                    $("#install-button-container").hide();
+                    Thesis.Gallery.init();                
+                } else {
+                    // not installed
+                    $("#install_button").show();
+                    context = document.getElementById('bouncing-ball').getContext('2d');
+                    setInterval(Thesis.Firefox.drawBall,10);
+                }
+            }
+
+            
+            console.log("<-- Firefox init done -->");
+        },
+
+        bindUIActions: function () {
+            $("#install_button").click(function() {
+                console.log(s.gManifestName);
+                var req = navigator.mozApps.install(s.gManifestName);
+                req.onsuccess = function() {
+                    $("#install_button").text("INSTALLED!").unbind('click');
+                }
+                req.onerror = function(errObj) {
+                    alert("Couldn't install (" + errObj.code + ") " + errObj.message);
+                }
+            });
+        },
+
+        listDirectory: function (path, suffix, callback) {
+            var pics = navigator.getDeviceStorage(path);
+            var cursor = pics.enumerate();
+            var dirs = [];
+            var allowedFileTypes = ["image/png", "image/jpeg", "image/gif"];
+            var state;
+
+            cursor.onsuccess = function () {
+                var file = this.result;
+                if (!file) {
+                    callback(dirs);
+                } else {
+                    if(allowedFileTypes.indexOf(file.type) > -1) {
+                        var dir = {
+                                name: file.name,
+                                fullPath: window.URL.createObjectURL(file)
+                        }
+
+                        dirs.push(dir);
+                    }
+                    this.continue();
+                } 
+            }
+
+            cursor.onerror = function () {
+                console.warn("No file found: " + this.error);
+            }
+        },
+
+        drawBall: function()
+        {
+          context.clearRect(0,0, 300,300);
+          context.beginPath();
+          context.fillStyle="#0000ff";
+          // Draws a circle of radius 20 at the coordinates 100,100 on the canvas
+          context.arc(s.x,s.y,20,0,Math.PI*2,true);
+          context.closePath();
+          context.fill();
+
+          if( s.x<20 || s.x>280) s.dx=-s.dx;
+          if( s.y<20 || s.y>280) s.dy=-s.dy;
+          s.x+=s.dx;
+          s.y+=s.dy;
         }
     }
 })();
 
 //Tizen initialize function
 var init = function () {
+    //TODO: Make this as a module
+    Thesis.Settings.device.tizen = true;
+
     // TODO:: Do your initialization job
     console.log("init() called");
 
@@ -364,8 +685,9 @@ $(document).bind('pageinit', init);
 
 //Init brower and phonegap
 $(function() {
-    
-    if (navigator.userAgent.match(/(Tizen)/)) {
+    if (navigator.userAgent.match(/(Firefox)/)) {
+        Thesis.Firefox.init();
+    } else if (navigator.userAgent.match(/(Tizen)/)) {
         console.log("Script start!");
     } else if (navigator.userAgent.match(/(iPhone|iPod|iPad|Android|BlackBerry|IEMobile)/)) {
         document.addEventListener("deviceready", function () {
@@ -373,6 +695,7 @@ $(function() {
             Thesis.Gallery.init();
         }, false);
     } else {
+        Thesis.Settings.device.desktop = true;
         Thesis.Gallery.init();
     }
 
