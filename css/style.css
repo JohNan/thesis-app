@@ -1,3 +1,4 @@
+@import url(../resources/headers.css);
 body {
 	background: #000;
 	margin: 0;
@@ -5,10 +6,6 @@ body {
 }
 header, section, footer, aside, nav, article, figure { 
 	display: block; 
-}
-header {
-	background: #0b8dc9;
-	padding: 6px;
 }
 header, footer, section {
 	color: #fff;

@@ -1,54 +1,44 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
    "http://www.w3.org/TR/html4/strict.dtd">
-<html manifest="offline.appcache">
+<html>
+	<!-- <html manifest="offline.appcache"> -->
 	<head>
 	<title>Gallery Deluxe</title>
-	<meta name="format-detection" content="telephone=no" />
-    <meta name="viewport" content="width=device-width, initial-scale=1"> 
+    <meta name="viewport" content="width=device-width" />
+    <link rel="stylesheet" type="text/css" href="css/index.css" />
 	<link rel="stylesheet" type="text/css" href="css/style.css">
-    <link rel="stylesheet" type="text/css" href="css/jquery.mobile-1.3.2.min.css">    
-    <link rel="stylesheet" type="text/css" href="css/my-custom-theme.min.css">
+
 	</head>
 	<body>
-		<div data-role="page" data-theme="a">
-			<div data-role="header">
-				<h1>Gallery Deluxe</h1>
-			</div><!-- /header -->
-
-			<div data-role="content" id="content">	
-			</div><!-- /content -->
-
-			<div data-role="footer" data-position="fixed" data-tap-toggle="false" id="footer">
-				<div id="image-panel" data-role="controlgroup" data-type="horizontal" >
-					<button id="rotate-left">Rotate left</button>
-					<button id="rotate-right">Rotate right</button>
-					<button id="invert">Invert</button>
-				</div>
-			</div><!-- /footer -->
-		</div><!-- /page -->
+		<section role="region">
+		  <header>
+		    <menu type="toolbar">
+		     <!--  <a href="#"><span class="icon icon-edit">edit</span></a>
+		      <a href="#"><span class="icon icon-add">add</span></a> -->
+		    </menu>
+		    <h1>Gallery Deluxe</h1>
+		  </header>
+		</section>
+		<section id="debug">
+			<div id="ratio"></div>
+		</section>
+		<section id="content">
 					
-        <script type="text/javascript" src="js/jquery-2.0.3.min.js"></script>
-		<script type="text/javascript" src="js/jquery.mobile-1.3.2.min.js"></script>		
-		<script type="text/javascript" src="js/script.js"></script>
-		<script type="text/javascript">
-            app.initialize();
-        </script>
-
-		<script>
-
-		var gManifestName = "/manifest.webapp";
-
-		$(document).ready(function() {
-		  
-		});
-
-		</script>
+		</section>		
+        <footer id="footer">
+			<div id="image-panel" data-role="controlgroup" data-type="horizontal" >
+				<button id="rotate-left">Rotate left</button>
+				<button id="rotate-right">Rotate right</button>
+				<button id="invert">Invert</button>
+			</div>
+		</footer>
 		<div id="install-button-container">
 			<div id="install_button">
 			    INSTALL
 			</div>
 			<canvas id="bouncing-ball" width="300" height="300" ></canvas>	
 		</div>
+
 		<div id="fullscreen">
 			<div id="fullscreen-image-container-prev">
 				<canvas id="fullscreen-img3"></canvas>
@@ -60,5 +50,9 @@
 				<canvas id="fullscreen-img2"></canvas>
 			</div>
 		</div>
+
+		<script type="text/javascript" src="js/jquery-2.0.3.min.js"></script>
+		<script type="text/javascript" src="js/jquery.mobile-1.3.2.min.js"></script>	        		
+		<script type="text/javascript" src="js/script.js"></script>
 	</body>
 </html>

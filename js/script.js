@@ -72,8 +72,6 @@ Thesis.Gallery = (function() {
             s.maxWidth = Math.floor(($(document).innerWidth()/ 2)-(s.imageMargin*4)-15);
             s.maxHeight = Math.floor((($(document).innerWidth()/ 2)-(s.imageMargin*4)-15)*0.8);
 
-            console.log(s.maxWidth);
-
             if(Thesis.Settings.isPhoneGap()) {
                 this.listDirectory = Thesis.PhoneGap.listDirectory;
                 s.pictureDir = "DCIM/Camera";
@@ -632,7 +630,7 @@ Thesis.Firefox = (function() {
             }
 
             cursor.onerror = function () {
-                console.warn("No file found: " + this.error);
+                console.warn("No file found: " + this.error.name);
             }
         },
 
