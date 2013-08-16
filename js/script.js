@@ -39,7 +39,9 @@ Thesis.Gallery = (function() {
     return {
         settings: {
             this: null,
+            moveLimit: 30,
             imageMargin: 6,
+            footerHeight: 60,
             maxWidth: 0,
             maxHeight: 0,
             min: 0,
@@ -67,8 +69,10 @@ Thesis.Gallery = (function() {
             s = this.settings;
             s.this = this;
 
-            s.maxWidth = Math.floor(($(document).innerWidth()/ 2)-(s.imageMargin*4));
-            s.maxHeight = Math.floor(($(document).innerWidth()/ 2)-(s.imageMargin*4)*0.8);
+            s.maxWidth = Math.floor(($(document).innerWidth()/ 2)-(s.imageMargin*4)-15);
+            s.maxHeight = Math.floor((($(document).innerWidth()/ 2)-(s.imageMargin*4)-15)*0.8);
+
+            console.log(s.maxWidth);
 
             if(Thesis.Settings.isPhoneGap()) {
                 this.listDirectory = Thesis.PhoneGap.listDirectory;
@@ -161,8 +165,86 @@ Thesis.Gallery = (function() {
                 }
             });
 
-            $("#fullscreen-image-container").on("click", function(event){
-                $(this).parent().hide();
+            var prevPicObj = $("#fullscreen-image-container-prev");
+            var currentPicObj = null;
+            var nextPicObj = null;
+            var draggable = null;
+            var startX = 0;
+            var moveX = 0;
+            var tap = true;
+
+            $("#fullscreen-image-container-current, #fullscreen-image-container-next").bind("vmousedown vmouseup vmousemove", function (event) {
+                if (event.type == 'vmousedown') {
+                    moveX = 0;
+                    startX = event.pageX;
+                    draggable = $(this);
+                    tap = true;
+                    nextPicObj.show();
+                } else if (event.type == 'vmouseup') {
+                    console.log("vmouseup");
+                    if(tap) {
+                        $(this).parent().hide();
+                        $("#footer").hide();
+                        tap = false;
+                    } else if(currentPicObj != null) {
+                        var docWidth = $(window).width();
+                        var center = docWidth/2;
+                        var offLeft = currentPicObj.offset().left;
+                        var offRight = currentPicObj.offset().left+currentPicObj.width();
+                        var currentImageIndex = parseInt(currentPicObj.find("canvas")[0].getAttribute("data-id"));
+
+                        if(offRight < center && offLeft < 0) {
+                            //slide out left
+                            currentPicObj.animate({"left" : -currentPicObj.width()}, "fast");
+
+                            if(currentImageIndex+1 <= s.fileList.length-1) {
+                                nextPicObj.animate({"left" : 0}, "fast");
+
+                                var imageIndex = parseInt(nextPicObj.find("canvas")[0].getAttribute("data-id"));
+                                var trgCanvas1 = currentPicObj.find("canvas")[0];
+
+                                tmp = currentPicObj;
+                                currentPicObj = nextPicObj;
+                                nextPicObj = tmp;
+
+                                tmp = null;
+
+                                console.log(imageIndex+1);
+                                console.log(trgCanvas1);
+
+                                s.this.loadPicture(trgCanvas1, imageIndex+1);
+                            }
+
+                        } else if(offLeft > center && offRight > docWidth) {
+                            //slide out right
+                            currentPicObj.animate({"left" : docWidth}, "fast");
+                            //nextPicObj.animate({"left" : docWidth}, "fast");
+                        } else if(offLeft < center && offRight > docWidth) {
+                            //slide back from right
+                            currentPicObj.animate({"left" : 0}, "fast");
+                        } else if(offLeft < 0 && offRight > center) {
+                            //slide back from left
+                            currentPicObj.animate({"left" : 0}, "fast");
+                            nextPicObj.animate({"left" : docWidth}, "fast");
+                        }
+                    }
+
+                    draggable = null;
+                } else if (event.type == 'vmousemove') {
+                    console.log("vmousemove");
+                    moveX = event.pageX-startX;
+                    if (Math.abs(moveX) > s.moveLimit && draggable) {
+                        tap = false;
+                        var left = draggable.offset().left;
+                        draggable.offset({
+                            left: event.pageX-startX
+                        });
+
+                        nextPicObj.offset({
+                            left: (event.pageX-startX)+draggable.width()
+                        });
+                    } 
+                } 
             });
 
             $("#rotate-left").on("click", function(event){
@@ -190,69 +272,91 @@ Thesis.Gallery = (function() {
             });          
 
             $("#content").on("click","canvas", function(event){
-                var canvas = $(this)[0];
-
-                console.log(canvas);
-                var canvasFullscreen = document.getElementById("fullscreen-img");
-                canvasFullscreen.setAttribute("data-id",canvas.id);
+                var srcCanvas1 = $(this)[0];                
+                var trgCanvas1 = document.getElementById("fullscreen-img");
+                var trgCanvas2 = document.getElementById("fullscreen-img2");
+                var imageIndex =  parseInt(srcCanvas1.getAttribute("data-id"));
                 
-                var ctx = canvasFullscreen.getContext("2d");
-                var pixelRatio = window.devicePixelRatio;
-                ctx.scale(pixelRatio, pixelRatio);
+                $(trgCanvas1).parent().offset({
+                    left: 0
+                });
 
-                var image = new Image();
-                image.id = "pic"
+                $(trgCanvas1).parent().css("position","fixed");
+                currentPicObj = $(trgCanvas1).parent();
 
-                image.onload = function () {
-                    var maxWidth = $(window).width()-100;
-                    var maxHeight = $(window).height()-100;
-                    var ratio = 1;
+                if(imageIndex+1 <= s.fileList.length-1) {                     
+                    $(trgCanvas2).parent().offset({
+                        left: $(window).width()
+                    });
 
-                    ratio = maxWidth / image.width;
-                    var sourceWidth = image.width * ratio;
-                    var sourceHeight = image.height * ratio;
+                    $(trgCanvas2).parent().css("position","fixed");
+                    nextPicObj = $(trgCanvas2).parent();   
+                    s.this.loadPicture(trgCanvas2, (imageIndex+1));
+                }
+                
+                s.this.loadPicture(trgCanvas1, imageIndex);
+                
 
-                    if (image.height > image.width) {
-                        ratio = maxHeight / image.height;
-                        var sourceWidth = image.width * ratio;
-                        var sourceHeight = image.height * ratio;
-                    } else if(sourceHeight > maxHeight) {
-                        ratio = maxHeight / image.height;
-                        sourceWidth = image.width * ratio;
-                        sourceHeight = image.height * ratio;
-                    }
-
-                    canvasFullscreen.width = maxWidth;
-                    canvasFullscreen.height = maxHeight;
-
-                    /*
-                    console.log("Ratio: " + ratio);
-
-                    console.log("Max w: " + maxWidth);
-                    console.log("Max h: " + maxHeight);
-
-                    console.log("Src w: " + sourceWidth);
-                    console.log("Src h: " + sourceHeight);
-
-                    console.log("Dest w: " + canvasFullscreen.width);
-                    console.log("Dest h: " + canvasFullscreen.height);*/
-                    
-                    s.fullscreenImg.maxWidth = maxWidth;
-                    s.fullscreenImg.maxHeight = maxHeight;
-                    s.fullscreenImg.width = sourceWidth;
-                    s.fullscreenImg.height = sourceHeight;
-                    ctx.drawImage(image, 0,0, image.width-2, image.height,(maxWidth-sourceWidth)/2, (maxHeight-sourceHeight)/2, sourceWidth,sourceHeight);
-                        
-                };
-
-                image.src = images[canvas.id].fullPath;
-                s.fullscreenImg.imageData = image;
-               
                 $("#fullscreen").show();
-                
-                console.log($(window).scrollTop());
+                $("#footer").show();                
             });
         }, 
+
+        loadPicture: function (trgCanvas, imageIndex) {
+            
+            trgCanvas.setAttribute("data-id",imageIndex);
+            
+            var ctx = trgCanvas.getContext("2d");
+            var pixelRatio = window.devicePixelRatio;
+            ctx.scale(pixelRatio, pixelRatio);
+
+            var image = new Image();
+
+            image.onload = function () {
+                var maxWidth = $(window).width();
+                var maxHeight = $(window).height()-s.footerHeight;
+                var ratio = 1;
+
+                ratio = maxWidth / image.width;
+                var sourceWidth = image.width * ratio;
+                var sourceHeight = image.height * ratio;
+
+                if (image.height > image.width) {
+                    ratio = maxHeight / image.height;
+                    var sourceWidth = image.width * ratio;
+                    var sourceHeight = image.height * ratio;
+                } else if(sourceHeight > maxHeight) {
+                    ratio = maxHeight / image.height;
+                    sourceWidth = image.width * ratio;
+                    sourceHeight = image.height * ratio;
+                }
+
+                trgCanvas.width = maxWidth;
+                trgCanvas.height = maxHeight;
+
+                /*
+                console.log("Ratio: " + ratio);
+
+                console.log("Max w: " + maxWidth);
+                console.log("Max h: " + maxHeight);
+
+                console.log("Src w: " + sourceWidth);
+                console.log("Src h: " + sourceHeight);
+
+                console.log("Dest w: " + trgCanvas.width);
+                console.log("Dest h: " + trgCanvas.height);*/
+                
+                s.fullscreenImg.maxWidth = maxWidth;
+                s.fullscreenImg.maxHeight = maxHeight;
+                s.fullscreenImg.width = sourceWidth;
+                s.fullscreenImg.height = sourceHeight;
+                ctx.drawImage(image, 0,0, image.width-2, image.height,(maxWidth-sourceWidth)/2, (maxHeight-sourceHeight)/2, sourceWidth,sourceHeight);
+                    
+            };
+
+            image.src = s.fileList[imageIndex].fullPath;
+            s.fullscreenImg.imageData = image;
+        },
 
         rotateCanvas: function (canvas, imageObj, degrees) {
             var ctx = canvas.getContext("2d");
@@ -296,8 +400,8 @@ Thesis.Gallery = (function() {
                     console.log(images[i].name);                    
 
                     canvas[i] = document.createElement("canvas");
-                    canvas[i].id = i;
                     canvas[i].className = "thumb";
+                    canvas[i].setAttribute("data-id",i);
 
                     ctx[i] = canvas[i].getContext("2d");
 
@@ -550,30 +654,53 @@ Thesis.Firefox = (function() {
     }
 })();
 
-//Tizen initialize function
-var init = function () {
-    //TODO: Make this as a module
-    Thesis.Settings.device.tizen = true;
+Thesis.Tizen = (function () {
+    var s;
+    var context;
 
-    // TODO:: Do your initialization job
-    console.log("init() called");
+    return {
+        settings: {
+            
+        },
 
-    Thesis.Gallery.init();
+        init: function () {
+            console.log("<-- Tizen init start -->");
+            Thesis.Settings.device.tizen = true;
+            
+            s = this.settings;
 
-    // add eventListener for tizenhwkey
-    document.addEventListener('tizenhwkey', function(e) {
-        if(e.keyName == "back")
-            tizen.application.getCurrentApplication().exit();
-    });
-};
-$(document).bind('pageinit', init);
+            
+
+
+            // add eventListener for tizenhwkey
+            document.addEventListener('tizenhwkey', function(e) {
+                if(e.keyName == "back")
+                    tizen.application.getCurrentApplication().exit();
+            });
+
+            this.bindUIActions();
+        },
+
+        bindUIActions: function () {
+            
+        },
+
+        listDirectory: function (path, suffix, callback) {
+           
+        },
+    }
+})();
+
+$(document).bind('pageinit', function () {
+    if (navigator.userAgent.match(/(Tizen)/)) {
+        Thesis.Tizen.init();
+    }     
+});
 
 //Init brower and phonegap
 $(function() {
     if (navigator.userAgent.match(/(Firefox)/)) {
         Thesis.Firefox.init();
-    } else if (navigator.userAgent.match(/(Tizen)/)) {
-        console.log("Script start!");
     } else if (navigator.userAgent.match(/(iPhone|iPod|iPad|Android|BlackBerry|IEMobile)/)) {
         document.addEventListener("deviceready", function () {
             Thesis.PhoneGap.init();  
@@ -583,7 +710,6 @@ $(function() {
         Thesis.Settings.device.desktop = true;
         Thesis.Gallery.init();
     }
-
 });
 
 
