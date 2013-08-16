@@ -69,11 +69,11 @@ Thesis.Gallery = (function() {
             s = this.settings;
             s.this = this;
 
-
             s.maxWidth = Math.floor(($(document).innerWidth()/ 2)-(s.imageMargin*4)-15);
             s.maxHeight = Math.floor((($(document).innerWidth()/ 2)-(s.imageMargin*4)-15)*0.8);
 
             console.log(s.maxWidth);
+
             if(Thesis.Settings.isPhoneGap()) {
                 this.listDirectory = Thesis.PhoneGap.listDirectory;
                 s.pictureDir = "DCIM/Camera";
@@ -271,29 +271,6 @@ Thesis.Gallery = (function() {
                 s.this.invertCanvas(canvas, imageObj);
             });          
 
-            $("#rotate-left").on("click", function(event){
-                console.log("Rotate left.");
-                var canvas = document.getElementById("fullscreen-img");
-                var image = s.fullscreenImg.imageData;
-
-                s.this.rotateCanvas(canvas, image, s.fullscreenImg.angle -= 30);
-            }); 
-
-            $("#rotate-right").on("click", function(event){
-                console.log("Rotate right.");
-                var canvas = document.getElementById("fullscreen-img");
-                var image = s.fullscreenImg.imageData;
-                           
-                s.this.rotateCanvas(canvas, image, s.fullscreenImg.angle += 30);
-            });
-
-            $("#invert").on("click", function(event){
-                console.log("Rotate right.");
-                var canvas = document.getElementById("fullscreen-img");
-
-                s.this.invertCanvas(canvas, imageObj);
-            });          
-
             $("#content").on("click","canvas", function(event){
                 var srcCanvas1 = $(this)[0];                
                 var trgCanvas1 = document.getElementById("fullscreen-img");
@@ -380,8 +357,7 @@ Thesis.Gallery = (function() {
             image.src = s.fileList[imageIndex].fullPath;
             s.fullscreenImg.imageData = image;
         },
-                
-                
+
         rotateCanvas: function (canvas, imageObj, degrees) {
             var ctx = canvas.getContext("2d");
             ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -393,36 +369,6 @@ Thesis.Gallery = (function() {
         },
 
         invertCanvas: function (canvas, imageObj) {
-            var ctx = canvas.getContext("2d");
-            //ctx.drawImage(image,canvas.width,canvas.height);
-            console.log(canvas.width);
-            console.log(imageObj.width);
-            var imgData = ctx.getImageData((canvas.width/2)-((imageObj.width-1)/2),(canvas.height/2)-(imageObj.height/2),imageObj.width,imageObj.height);
-            // invert colors
-            for (var i=0;i<imgData.data.length;i+=4) {
-              imgData.data[i]=255-imgData.data[i];
-              imgData.data[i+1]=255-imgData.data[i+1];
-              imgData.data[i+2]=255-imgData.data[i+2];
-              imgData.data[i+3]=255;
-            }
-            ctx.putImageData(imgData,(canvas.width/2)-((imageObj.width-1)/2),(canvas.height/2)-(imageObj.height/2));            
-        },
-
-        rotateCanvas: function (canvas, image, degrees) {
-            var ctx = canvas.getContext("2d");
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-            ctx.save();
-            ctx.translate(canvas.width/2,canvas.height/2);
-            ctx.rotate(degrees*Math.PI/180);
-            if(image.height > image.width) {
-                ctx.drawImage(image,-canvas.width/2,-canvas.width/2-200, canvas.width, canvas.height);    
-            } else {
-                ctx.drawImage(image,-canvas.width/2,-canvas.width/2+350, canvas.width, canvas.height);
-            }
-            
-            ctx.restore();
-        },
-
             var ctx = canvas.getContext("2d");
             //ctx.drawImage(image,canvas.width,canvas.height);
             console.log(canvas.width);
@@ -620,6 +566,8 @@ Thesis.Firefox = (function() {
             y: 200,
             dx: 5,
             dy: 5
+        },
+
         init: function () {
             Thesis.Settings.device.firefox = true;
             
@@ -642,7 +590,7 @@ Thesis.Firefox = (function() {
                 }
             }
 
-
+            
             console.log("<-- Firefox init done -->");
         },
 
@@ -703,120 +651,25 @@ Thesis.Firefox = (function() {
           s.x+=s.dx;
           s.y+=s.dy;
         }
-
     }
 })();
 
-Thesis.Firefox = (function() {
+Thesis.Tizen = (function () {
     var s;
     var context;
 
     return {
         settings: {
-            gManifestName: location.protocol + "//" + location.host + location.pathname + "manifest.webapp",
-            x: 100,
-            y: 200,
-            dx: 5,
-            dy: 5
+            
         },
 
         init: function () {
-            s = this.settings;
-            this.bindUIActions();
-
-            var request = navigator.mozApps.getSelf();
-
-            request.onsuccess = function() {
-                if (request.result) {
-                    // we're installed
-                    $("#install_button").text("INSTALLED!").show();
-                    $("#install-button-container").hide();
-                    Thesis.Gallery.init();                
-                } else {
-                    // not installed
-                    $("#install_button").show();
-                    context = document.getElementById('bouncing-ball').getContext('2d');
-                    setInterval(Thesis.Firefox.drawBall,10);
-                }
-            }
+            console.log("<-- Tizen init start -->");
+            Thesis.Settings.device.tizen = true;
             
-            request.onerror = function() {
-                alert('Error checking installation status: ' + this.error.message);
-            console.log("<-- Firefox init done -->");
-        },
+            s = this.settings;
 
-        bindUIActions: function () {
-            $("#install_button").click(function() {
-                console.log(s.gManifestName);
-                var req = navigator.mozApps.install(s.gManifestName);
-                req.onsuccess = function() {
-                    $("#install_button").text("INSTALLED!").unbind('click');
-                }
-                req.onerror = function(errObj) {
-                    alert("Couldn't install (" + errObj.code + ") " + errObj.message);
-                }
-            });
-        },
-
-        listDirectory: function (path, suffix, callback) {
-            var pics = navigator.getDeviceStorage(path);
-            var cursor = pics.enumerate();
-            var dirs = [];
-            var allowedFileTypes = ["image/png", "image/jpeg", "image/gif"];
-            var state;
-
-            cursor.onsuccess = function () {
-                var file = this.result;
-                if (!file) {
-                    callback(dirs);
-                } else {
-                    if(allowedFileTypes.indexOf(file.type) > -1) {
-                        var dir = {
-                                name: file.name,
-                                fullPath: window.URL.createObjectURL(file)
-                        }
-
-                        dirs.push(dir);
-                    }
-                    this.continue();
-                } 
-            }
-
-            cursor.onerror = function () {
-                console.warn("No file found: " + this.error);
-            }
-
-            var isCursorDone = function () {
-                console.log("Checkck cursor: " + cursor.readyState);
-                if(cursor.readyState === "done") {
-                    callback(dirs);
-                }
-            }
-
-            //setInterval(isCursorDone, 1);
-        },
-
-        drawBall: function()
-        {
-          context.clearRect(0,0, 300,300);
-          context.beginPath();
-          context.fillStyle="#0000ff";
-          // Draws a circle of radius 20 at the coordinates 100,100 on the canvas
-          context.arc(s.x,s.y,20,0,Math.PI*2,true);
-          context.closePath();
-          context.fill();
-
-          if( s.x<20 || s.x>280) s.dx=-s.dx;
-          if( s.y<20 || s.y>280) s.dy=-s.dy;
-          s.x+=s.dx;
-          s.y+=s.dy;
-        }
-    }
-})();
-
-    //TODO: Make this as a module
-    Thesis.Settings.device.tizen = true;
-
+            
 
 
             // add eventListener for tizenhwkey
