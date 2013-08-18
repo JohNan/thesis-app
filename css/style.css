@@ -66,3 +66,11 @@ canvas {
 #fullscreen-image-container {
 	text-align: center;
 }
+#debug {
+	position: fixed;
+	top: 60;
+	right: 0;
+	background-color: green;
+	color: #fff;
+	z-index: 100000;
+}
