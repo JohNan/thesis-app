@@ -38,7 +38,7 @@ Thesis.Gallery = (function() {
     
     return {
         settings: {
-            this: null,
+            obj: null,
             moveLimit: 30,
             imageMargin: 6,
             footerHeight: 60,
@@ -58,6 +58,8 @@ Thesis.Gallery = (function() {
                 height: 0
             },
             pictureDir: "",
+            timers: [],
+            
         },
         listDirectory: function () {
             
@@ -67,7 +69,7 @@ Thesis.Gallery = (function() {
             console.log("<-- Gallery init start -->");
             
             s = this.settings;
-            s.this = this;
+            s.obj = this;
 
             s.maxWidth = Math.floor(($(document).innerWidth()/ 2)-(s.imageMargin*4)-15);
             s.maxHeight = Math.floor((($(document).innerWidth()/ 2)-(s.imageMargin*4)-15)*0.8);
@@ -172,6 +174,9 @@ Thesis.Gallery = (function() {
             var tap = true;
 
             $("#fullscreen-image-container-current, #fullscreen-image-container-next").bind("vmousedown vmouseup vmousemove", function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
                 if (event.type == 'vmousedown') {
                     moveX = 0;
                     startX = event.pageX;
@@ -179,7 +184,6 @@ Thesis.Gallery = (function() {
                     tap = true;
                     nextPicObj.show();
                 } else if (event.type == 'vmouseup') {
-                    console.log("vmouseup");
                     if(tap) {
                         $(this).parent().hide();
                         $("#footer").hide();
@@ -210,7 +214,7 @@ Thesis.Gallery = (function() {
                                 console.log(imageIndex+1);
                                 console.log(trgCanvas1);
 
-                                s.this.loadPicture(trgCanvas1, imageIndex+1);
+                                s.obj.loadPicture(trgCanvas1, imageIndex+1);
                             }
 
                         } else if(offLeft > center && offRight > docWidth) {
@@ -229,7 +233,6 @@ Thesis.Gallery = (function() {
 
                     draggable = null;
                 } else if (event.type == 'vmousemove') {
-                    console.log("vmousemove");
                     moveX = event.pageX-startX;
                     if (Math.abs(moveX) > s.moveLimit && draggable) {
                         tap = false;
@@ -250,7 +253,7 @@ Thesis.Gallery = (function() {
                 var canvas = document.getElementById("fullscreen-img");
                 var imageObj = s.fullscreenImg;
 
-                s.this.rotateCanvas(canvas, imageObj, s.fullscreenImg.angle -= 30);
+                s.obj.rotateCanvas(canvas, imageObj, s.fullscreenImg.angle -= 30);
             }); 
 
             $("#rotate-right").on("click", function(event){
@@ -258,7 +261,7 @@ Thesis.Gallery = (function() {
                 var canvas = document.getElementById("fullscreen-img");
                 var imageObj = s.fullscreenImg;
                            
-                s.this.rotateCanvas(canvas, imageObj, s.fullscreenImg.angle += 30);
+                s.obj.rotateCanvas(canvas, imageObj, s.fullscreenImg.angle += 30);
             });
 
             $("#invert").on("click", function(event){
@@ -266,15 +269,20 @@ Thesis.Gallery = (function() {
                 var canvas = document.getElementById("fullscreen-img");
                 var imageObj = s.fullscreenImg;
 
-                s.this.invertCanvas(canvas, imageObj);
+                s.obj.invertCanvas(canvas, imageObj);
             });          
 
-            $("#content").on("click","canvas", function(event){
+            $("#content").on("click","canvas", function(event){                
+                console.log("clicked");
+
                 var srcCanvas1 = $(this)[0];                
                 var trgCanvas1 = document.getElementById("fullscreen-img");
                 var trgCanvas2 = document.getElementById("fullscreen-img2");
                 var imageIndex =  parseInt(srcCanvas1.getAttribute("data-id"));
                 
+                var ctx = trgCanvas1.getContext("2d");
+                ctx.clearRect(0,0,trgCanvas1.width,trgCanvas1.height);
+
                 $(trgCanvas1).parent().offset({
                     left: 0
                 });
@@ -282,25 +290,53 @@ Thesis.Gallery = (function() {
                 $(trgCanvas1).parent().css("position","fixed");
                 currentPicObj = $(trgCanvas1).parent();
 
-                if(imageIndex+1 <= s.fileList.length-1) {                     
+                if(imageIndex+1 <= s.fileList.length-1) { 
+                    var ctx = trgCanvas2.getContext("2d");
+                    ctx.clearRect(0,0,trgCanvas2.width,trgCanvas2.height);
+
                     $(trgCanvas2).parent().offset({
                         left: $(window).width()
                     });
 
                     $(trgCanvas2).parent().css("position","fixed");
                     nextPicObj = $(trgCanvas2).parent();   
-                    s.this.loadPicture(trgCanvas2, (imageIndex+1));
+                    s.obj.loadPicture(trgCanvas2, (imageIndex+1));
                 }
                 
-                s.this.loadPicture(trgCanvas1, imageIndex);
+                s.obj.loadPicture(trgCanvas1, imageIndex, s.obj.messureTime);
                 
 
                 $("#fullscreen").show();
-                $("#footer").show();                
+                $("#footer").show(); 
+
+                
             });
         }, 
 
-        loadPicture: function (trgCanvas, imageIndex) {
+        messureTime : function (name) {
+            if(s.timers[name] === undefined) {
+                s.timers[name] = { 
+                    name: name,
+                    timeStart: 0,
+                    timeEnd: 0
+                }
+            }
+            if(s.timers[name].timeStart === 0) {
+                s.timers[name].timeStart = new Date().getMilliseconds();
+            } else {
+                s.timers[name].timeEnd = new Date().getMilliseconds();
+                var time = s.timers[name].timeEnd - s.timers[name].timeStart;                
+                $("#exec-time").html(name + ": " + time);
+
+                s.timers[name].timeStart = 0;
+            }
+        },
+
+        loadPicture: function (trgCanvas, imageIndex, callback) {
+            if(callback) {
+                //Load and draw image - timer start
+                callback(imageIndex);        
+            }            
             
             trgCanvas.setAttribute("data-id",imageIndex);
             
@@ -349,7 +385,11 @@ Thesis.Gallery = (function() {
                 s.fullscreenImg.width = sourceWidth;
                 s.fullscreenImg.height = sourceHeight;
                 ctx.drawImage(image, 0,0, image.width-2, image.height,(maxWidth-sourceWidth)/2, (maxHeight-sourceHeight)/2, sourceWidth,sourceHeight);
-                    
+            
+                if(callback) {
+                    //Load and draw image - timer start
+                    callback(imageIndex);        
+                }       
             };
 
             image.src = s.fileList[imageIndex].fullPath;

@@ -118,3 +118,11 @@ canvas {
 	margin: 50px auto;
 	display: block;
 }
+#debug {
+	position: fixed;
+	top: 60;
+	right: 0;
+	background-color: green;
+	color: #fff;
+	z-index: 100000;
+}
