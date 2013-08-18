@@ -14,25 +14,6 @@
     <script src="tizen-web-ui-fw/latest/js/jquery.js"></script>
     <script src="tizen-web-ui-fw/latest/js/tizen-web-ui-fw-libs.js"></script>
     <script src="tizen-web-ui-fw/latest/js/tizen-web-ui-fw.js" data-framework-theme="tizen-black"></script>
-    
-    <!--NOTE:
-        Additional scripts and css files are to be placed here.
-        You can use jQuery namespace($) and all functionalities in jQuery
-        in your script.  For example:
-
-            <script src="main.js"></script>
-            <link rel="stylesheet" href="my.css">
-    -->
-    <script  type="text/javascript" src="js/script.js"></script>
-    <link rel="stylesheet" type="text/css" href="./css/style.css"/>
-    <!--NOTE:
-        Additional scripts and css files are to be placed here.
-        You can use jQuery namespace($) and all functionalities in jQuery
-        in your script.  For example:
-
-            <script src="main.js"></script>
-            <link rel="stylesheet" href="my.css">
-    -->
     <script  type="text/javascript" src="js/script.js"></script>
     <link rel="stylesheet" type="text/css" href="./css/style.css"/>
 </head>
@@ -42,34 +23,35 @@
         <div data-role="header" data-position="fixed">
             <h1>Gallery Deluxe</h1>
         </div><!-- /header -->
-		<section id="debug">
-			<div id="ratio"></div>
-		</section>
         <div data-role="content">
             <section id="content">
             
             </section>
         </div><!-- /content -->
 
-        <div data-role="footer" data-position="fixed">
-            <h4>This is a footer</h4>
+        <div data-role="footer" data-position="fixed" id="footer">
+            <div id="image-panel">
+				<div data-role="button" data-inline="true" data-icon="plus" data-style="round" id="rotate-left">Rotate left</div>
+				<div data-role="button" data-inline="true" data-icon="plus" data-style="round" id="rotate-right">Rotate right</div>
+				<div data-role="button" data-inline="true" data-icon="plus" data-style="round" id="invert">Invert</div>
+			</div>
         </div><!-- /footer -->
     </div><!-- /page -->
     
     <div id="fullscreen">
-			<div id="fullscreen-image-container">
-				<canvas id="fullscreen-img"></canvas>
-				<!-- <canvas id="fullscreen-img2"></canvas> -->
-			</div>
-			<div id="image-panel">
-				<button id="rotate-left">Rotate left</button>
-				<button id="rotate-right">Rotate right</button>
-				<button id="invert">Invert</button>
-			</div>
+		<div id="fullscreen-image-container-prev">
+			<canvas id="fullscreen-img3"></canvas>
 		</div>
-
+		<div id="fullscreen-image-container-current">
+			<canvas id="fullscreen-img"></canvas>
+		</div>
+		<div id="fullscreen-image-container-next">
+			<canvas id="fullscreen-img2"></canvas>
+		</div>
+	</div>
+	</div>
 		<div id="debug">
 			<div id="exec-time"></div>
-	</div>
+		</div>
 </body>
 </html>
