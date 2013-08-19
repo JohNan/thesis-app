@@ -48,15 +48,7 @@ Thesis.Gallery = (function() {
             max: 10,
             step: 10,
             fileList: [],
-            fullscreenImg: {
-                fullPath: null,
-                imageData: null,
-                angle: 0,
-                maxWidth: 0,
-                maxHeight: 0,
-                width: 0,
-                height: 0
-            },
+            fullscreenImg: [],
             pictureDir: "",
             timers: [],
             
@@ -167,7 +159,7 @@ Thesis.Gallery = (function() {
                 }
             });
 
-            var prevPicObj = $("#fullscreen-image-container-prev");
+            var prevPicObj = null;
             var currentPicObj = null;
             var nextPicObj = null;
             var draggable = null;
@@ -175,23 +167,35 @@ Thesis.Gallery = (function() {
             var moveX = 0;
             var tap = true;
 
-            $("#fullscreen-image-container-current, #fullscreen-image-container-next").bind("vmousedown vmouseup vmousemove", function (event) {
+            $("#fullscreen-image-container-prev, #fullscreen-image-container-current, #fullscreen-image-container-next").bind("vmousedown vmouseup vmousemove", function (event) {
                 event.preventDefault();
                 event.stopPropagation();
+                var docWidth = $(window).width();
 
                 if (event.type == 'vmousedown') {
                     moveX = 0;
                     startX = event.pageX;
+
+                    //If draggeble != null, we are still dragging. Tap should not set to true to hide the fullscreen.
+                    if(draggable == null) {
+                        tap = true;    
+                    }
+
                     draggable = $(this);
-                    tap = true;
+                    currentPicObj = $(this);
+
                     nextPicObj.show();
+                    prevPicObj.show();
                 } else if (event.type == 'vmouseup') {
                     if(tap) {
-                        $(this).parent().hide();
+                        currentPicObj.parent().hide();                        
+                        prevPicObj.parent().hide();
+                        nextPicObj.parent().hide();
+
                         $("#footer").hide();
                         tap = false;
                     } else if(currentPicObj != null) {
-                        var docWidth = $(window).width();
+                        
                         var center = docWidth/2;
                         var offLeft = currentPicObj.offset().left;
                         var offRight = currentPicObj.offset().left+currentPicObj.width();
@@ -199,77 +203,110 @@ Thesis.Gallery = (function() {
 
                         if(offRight < center && offLeft < 0) {
                             //slide out left
-                            currentPicObj.animate({"left" : -currentPicObj.width()}, "fast");
-
-                            if(currentImageIndex+1 <= s.fileList.length-1) {
+                            if(s.fileList.length > currentImageIndex+1) {                          
+                                currentPicObj.animate({"left" : -currentPicObj.width()}, "fast");
                                 nextPicObj.animate({"left" : 0}, "fast");
-
-                                var imageIndex = parseInt(nextPicObj.find("canvas")[0].getAttribute("data-id"));
-                                var trgCanvas1 = currentPicObj.find("canvas")[0];
-
+                           
                                 tmp = currentPicObj;
                                 currentPicObj = nextPicObj;
+                                nextPicObj = prevPicObj;
+                                prevPicObj = tmp;        
+
+                                delete tmp;
+
+                                var imageIndex = parseInt(currentPicObj.find("canvas")[0].getAttribute("data-id"));
+                                var trgCanvas1 = nextPicObj.find("canvas")[0];
+
+                                if(s.fileList.length > imageIndex+1) {
+                                    s.obj.loadPicture(trgCanvas1, imageIndex+1);
+                                } else {
+                                    //No more images. Clear the next obj.                              
+                                    var canvas = nextPicObj.find("canvas")[0]
+                                    canvas.getContext("2d").clearRect(0,0,canvas.width,canvas.height);
+                                }
+                            } else {
+                                currentPicObj.animate({"left" : 0}, "fast");
+                                nextPicObj.animate({"left" : docWidth}, "fast");
+                            }
+                        } else if(offLeft > center && offRight > docWidth) {
+                            //slide out right                            
+                            if(currentImageIndex-1 >= 0) {
+                                currentPicObj.animate({"left" : docWidth}, "fast");
+                                prevPicObj.animate({"left" : 0}, "fast");
+
+                                tmp = currentPicObj;
+                                currentPicObj = prevPicObj;
+                                prevPicObj = nextPicObj;
                                 nextPicObj = tmp;
 
-                                tmp = null;
+                                delete tmp;
 
-                                console.log(imageIndex+1);
-                                console.log(trgCanvas1);
+                                var imageIndex = parseInt(currentPicObj.find("canvas")[0].getAttribute("data-id"));
+                                var trgCanvas1 = prevPicObj.find("canvas")[0];
 
-                                s.obj.loadPicture(trgCanvas1, imageIndex+1);
+                                if(imageIndex-1 >= 0) {
+                                    s.obj.loadPicture(trgCanvas1, imageIndex-1);
+                                } else {
+                                    //No more images. Clear the previous obj.
+                                    var canvas = prevPicObj.find("canvas")[0]
+                                    canvas.getContext("2d").clearRect(0,0,canvas.width,canvas.height);
+                                }
+                            } else {
+                                currentPicObj.animate({"left" : 0}, "fast");
+                                prevPicObj.animate({"left" : -docWidth}, "fast");
                             }
 
-                        } else if(offLeft > center && offRight > docWidth) {
-                            //slide out right
-                            currentPicObj.animate({"left" : docWidth}, "fast");
-                            //nextPicObj.animate({"left" : docWidth}, "fast");
                         } else if(offLeft < center && offRight > docWidth) {
                             //slide back from right
                             currentPicObj.animate({"left" : 0}, "fast");
+                            prevPicObj.animate({"left" : -docWidth}, "fast");
                         } else if(offLeft < 0 && offRight > center) {
                             //slide back from left
                             currentPicObj.animate({"left" : 0}, "fast");
                             nextPicObj.animate({"left" : docWidth}, "fast");
                         }
                     }
-
+                    console.log(currentPicObj);
                     draggable = null;
                 } else if (event.type == 'vmousemove') {
                     moveX = event.pageX-startX;
                     if (Math.abs(moveX) > s.moveLimit && draggable) {
                         tap = false;
-                        var left = draggable.offset().left;
                         draggable.offset({
-                            left: event.pageX-startX
+                            left: moveX
                         });
 
                         nextPicObj.offset({
-                            left: (event.pageX-startX)+draggable.width()
+                            left: moveX+docWidth
+                        });
+
+                        prevPicObj.offset({
+                            left: moveX-docWidth
                         });
                     } 
-                } 
+                }                 
             });
 
             $("#rotate-left").on("click", function(event){
                 console.log("Rotate left.");
-                var canvas = document.getElementById("fullscreen-img");
-                var imageObj = s.fullscreenImg;
-
-                s.obj.rotateCanvas(canvas, imageObj, s.fullscreenImg.angle -= 30);
+                var canvas = currentPicObj.find("canvas")[0];
+                var imageObj = s.fullscreenImg[canvas.id];
+                console.log(canvas);
+                s.obj.rotateCanvas(canvas, imageObj, s.fullscreenImg[canvas.id].angle -= 30);
             }); 
 
             $("#rotate-right").on("click", function(event){
                 console.log("Rotate right.");
-                var canvas = document.getElementById("fullscreen-img");
-                var imageObj = s.fullscreenImg;
+                var canvas = currentPicObj.find("canvas")[0];
+                var imageObj = s.fullscreenImg[canvas.id];
                            
-                s.obj.rotateCanvas(canvas, imageObj, s.fullscreenImg.angle += 30);
+                s.obj.rotateCanvas(canvas, imageObj, s.fullscreenImg[canvas.id].angle += 30);
             });
 
             $("#invert").on("click", function(event){
-                console.log("Rotate right.");
-                var canvas = document.getElementById("fullscreen-img");
-                var imageObj = s.fullscreenImg;
+                console.log("Invert.");
+                var canvas = currentPicObj.find("canvas")[0];
+                var imageObj = s.fullscreenImg[canvas.id];
 
                 s.obj.invertCanvas(canvas, imageObj);
             });          
@@ -278,34 +315,50 @@ Thesis.Gallery = (function() {
                 console.log("clicked");
 
                 var srcCanvas1 = $(this)[0];                
-                var trgCanvas1 = document.getElementById("fullscreen-img");
-                var trgCanvas2 = document.getElementById("fullscreen-img2");
+                var currentCanvas = document.getElementById("fullscreen-img");
+                var nextCanvas = document.getElementById("fullscreen-img2");
+                var prevCanvas = document.getElementById("fullscreen-img3");
                 var imageIndex =  parseInt(srcCanvas1.getAttribute("data-id"));
                 
-                var ctx = trgCanvas1.getContext("2d");
-                ctx.clearRect(0,0,trgCanvas1.width,trgCanvas1.height);
+                var ctx = currentCanvas.getContext("2d");
+                ctx.clearRect(0,0,currentCanvas.width,currentCanvas.height);
 
-                $(trgCanvas1).parent().offset({
+                $(currentCanvas).parent().offset({
                     left: 0
                 });
 
-                $(trgCanvas1).parent().css("position","fixed");
-                currentPicObj = $(trgCanvas1).parent();
+                $(currentCanvas).parent().css("position","fixed");
+                currentPicObj = $(currentCanvas).parent();
 
+                //Load next image
                 if(imageIndex+1 <= s.fileList.length-1) { 
-                    var ctx = trgCanvas2.getContext("2d");
-                    ctx.clearRect(0,0,trgCanvas2.width,trgCanvas2.height);
+                    var ctx = nextCanvas.getContext("2d");
+                    ctx.clearRect(0,0,nextCanvas.width,nextCanvas.height);
 
-                    $(trgCanvas2).parent().offset({
+                    $(nextCanvas).parent().offset({
                         left: $(window).width()
                     });
 
-                    $(trgCanvas2).parent().css("position","fixed");
-                    nextPicObj = $(trgCanvas2).parent();   
-                    s.obj.loadPicture(trgCanvas2, (imageIndex+1));
+                    $(nextCanvas).parent().css("position","fixed");
+                    nextPicObj = $(nextCanvas).parent();   
+                    s.obj.loadPicture(nextCanvas, (imageIndex+1));
+                }
+
+                //Load previous image
+                if(imageIndex-1 >= 0) { 
+                    var ctx = prevCanvas.getContext("2d");
+                    ctx.clearRect(0,0,prevCanvas.width,prevCanvas.height);
+
+                    $(prevCanvas).parent().offset({
+                        left: -$(window).width()
+                    });
+
+                    $(prevCanvas).parent().css("position","fixed");
+                    prevPicObj = $(prevCanvas).parent();   
+                    s.obj.loadPicture(prevCanvas, (imageIndex-1));
                 }
                 
-                s.obj.loadPicture(trgCanvas1, imageIndex, s.obj.messureTime);
+                s.obj.loadPicture(currentCanvas, imageIndex, s.obj.messureTime);
                 
 
                 $("#fullscreen").show();
@@ -340,6 +393,16 @@ Thesis.Gallery = (function() {
                 callback(imageIndex);        
             }            
             
+            s.fullscreenImg[trgCanvas.id] = {
+                                            fullPath: null,
+                                            imageData: null,
+                                            angle: 0,
+                                            maxWidth: 0,
+                                            maxHeight: 0,
+                                            width: 0,
+                                            height: 0
+                                        };
+
             trgCanvas.setAttribute("data-id",imageIndex);
             
             var ctx = trgCanvas.getContext("2d");
@@ -382,10 +445,10 @@ Thesis.Gallery = (function() {
                 console.log("Dest w: " + trgCanvas.width);
                 console.log("Dest h: " + trgCanvas.height);*/
                 
-                s.fullscreenImg.maxWidth = maxWidth;
-                s.fullscreenImg.maxHeight = maxHeight;
-                s.fullscreenImg.width = sourceWidth;
-                s.fullscreenImg.height = sourceHeight;
+                s.fullscreenImg[trgCanvas.id].maxWidth = maxWidth;
+                s.fullscreenImg[trgCanvas.id].maxHeight = maxHeight;
+                s.fullscreenImg[trgCanvas.id].width = sourceWidth;
+                s.fullscreenImg[trgCanvas.id].height = sourceHeight;
                 ctx.drawImage(image, 0,0, image.width-2, image.height,(maxWidth-sourceWidth)/2, (maxHeight-sourceHeight)/2, sourceWidth,sourceHeight);
             
                 if(callback) {
@@ -395,7 +458,7 @@ Thesis.Gallery = (function() {
             };
 
             image.src = s.fileList[imageIndex].fullPath;
-            s.fullscreenImg.imageData = image;
+            s.fullscreenImg[trgCanvas.id].imageData = image;
         },
 
         rotateCanvas: function (canvas, imageObj, degrees) {
