@@ -12,7 +12,18 @@ if (typeof CanvasRenderingContext2D.prototype.reset !== 'function') {
         return this;
     };
 }
+if (typeof Array.prototype.diff !== 'function') {
+    Array.prototype.diff = function(b,prop) {
+        var bIds = {}
+        b.forEach(function(obj){
+            bIds[obj[prop]] = obj;
+        });
 
+        return this.filter(function(i) {
+            return !(i[prop] in bIds);
+        });
+    };
+}
 var Thesis = {};
 
 Thesis.Settings = (function () {
@@ -147,13 +158,37 @@ Thesis.Gallery = (function() {
                 this.loadGallery(fileList, s.step);
             } else {
                 var printDirPath = function(fileList){
-                    console.log("DIRS: " + JSON.stringify(fileList) );
-
                     Thesis.Gallery.bindUIActions(fileList);
                     Thesis.Gallery.loadGallery(fileList, 10);
-                }
+                };
+
+                var galleryRefresh = function(fileList){
+                    var preLength = s.fileList.length;
+                    
+                    console.log("Refresh: " + fileList.length + " - " + s.fileList.length);
+
+                    var diffArr = fileList.diff(s.fileList,'name');
+                    console.log(diffArr.length);
+                    if(diffArr.length > 0) {
+                        console.log((fileList.length - s.fileList.length - 1));
+                        for (var i = diffArr.length - 1; i >= 0; i--) {
+                            console.log(diffArr[i].name);
+                            s.fileList.unshift(diffArr[i]);                            
+                        };
+                        
+                        var tmpMin = s.min;
+                        var tmpMax = s.max;
+                        s.min = 0;
+                        s.max = diffArr.length;
+                        console.log(s.max);
+                        Thesis.Gallery.loadGallery(fileList, 0, true);
+                        s.min = tmpMin;
+                        s.max = tmpMax;
+                    }                    
+                };
 
                 this.listDirectory(s.pictureDir,"jpg",printDirPath);
+                var refresh = setInterval(function() { s.obj.listDirectory(s.pictureDir,"jpg",galleryRefresh); }, 10000);
             } 
         },
 
@@ -306,7 +341,7 @@ Thesis.Gallery = (function() {
                 console.log("Rotate left.");
                 var canvas = currentPicObj.find("canvas")[0];
                 var imageObj = s.fullscreenImg[canvas.id];
-                console.log(canvas);
+                
                 s.obj.rotateCanvas(canvas, imageObj, s.fullscreenImg[canvas.id].angle -= 30);
             }); 
 
@@ -492,7 +527,7 @@ Thesis.Gallery = (function() {
             ctx.putImageData(imgData,(canvas.width/2)-((imageObj.width-1)/2),(canvas.height/2)-(imageObj.height/2));            
         },
 
-        loadGallery: function (images, step) {
+        loadGallery: function (images, step, insertOnTop) {
             var canvas = [];
             var ctx = [];
             var imageObj = [];
@@ -505,8 +540,6 @@ Thesis.Gallery = (function() {
 
             if(images.length >= min) {
                 for (var i = min; i < images.length && i < max; i++) {
-                    console.log(images[i].name);                    
-
                     canvas[i] = document.createElement("canvas");
                     canvas[i].className = "thumb";
                     canvas[i].setAttribute("data-id",i);
@@ -561,7 +594,15 @@ Thesis.Gallery = (function() {
                         }
                     }(i));
                     imageObj[i].src = images[i].fullPath;
-                    document.getElementById('content').appendChild(canvas[i]);
+                    
+                    if(insertOnTop) {
+                        var parentElement = document.getElementById('content');
+                        var theFirstChild = parentElement.firstChild;
+                        parentElement.insertBefore(canvas[i], theFirstChild);
+                        console.log(parentElement);
+                    } else {
+                        document.getElementById('content').appendChild(canvas[i]);    
+                    }                    
                 };
             };
 
