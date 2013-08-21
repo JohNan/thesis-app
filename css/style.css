@@ -126,3 +126,11 @@ canvas {
 	color: #fff;
 	z-index: 100000;
 }
+#debug {
+	position: fixed;
+	top: 0;
+	right: 0;
+	background-color: green;
+	color: #fff;
+	z-index: 100000;
+}
