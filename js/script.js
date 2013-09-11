@@ -278,8 +278,7 @@ Thesis.Gallery = (function() {
                         var canvas = touch.currentPicObj.find("canvas")[0];
                         var imageObj = s.fullscreenImg[canvas.id];
                         var ctx = canvas.getContext("2d");
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        console.log("touchstart: " + lastScale);
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);                        
 
                         startDist =
                         Math.sqrt(
@@ -306,7 +305,7 @@ Thesis.Gallery = (function() {
 
                         draggable = $(event.currentTarget);
                         touch.currentPicObj = $(event.currentTarget);
-                        console.log(touch.nextPicObj);
+                        
                         touch.nextPicObj.show();
                         touch.prevPicObj.show();
                     }
@@ -714,6 +713,7 @@ Thesis.Gallery = (function() {
             var imageObj = [];
             var min = s.min;
             var max = s.max;
+            var total = 0;
 
             if (s.fileList.length == 0) {
                 s.fileList = images;
@@ -753,6 +753,11 @@ Thesis.Gallery = (function() {
                             var destHeight = Math.floor(canvas[n].height);
                             
                             ctx[n].drawImage(imageObj[n], sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
+                            total++;
+                            //Need to wait untill al images have been loaded before stopping the
+                            if(total == max && !insertOnTop) {
+                                Thesis.Messure.stop("load-gallery");
+                            }
                         }
                     }(i));
                     imageObj[i].src = images[i].fullPath;
@@ -770,9 +775,7 @@ Thesis.Gallery = (function() {
 
             s.min += step;
             s.max += step;
-            if (!insertOnTop) {
-                Thesis.Messure.stop("load-gallery");
-            }
+            
         },
         LeakMemory: function() {
             for (var i = 0; i < 5000; i++) {
