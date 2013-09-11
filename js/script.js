@@ -112,7 +112,7 @@ Thesis.Gallery = (function() {
                 s.pictureDir = "DCIM/Camera";
             } else if (Thesis.Settings.isFireFox()) {
                 this.listDirectory = Thesis.Firefox.listDirectory;
-                s.pictureDir = "DCIM/Camera";
+                s.pictureDir = "pictures";
             } else if (Thesis.Settings.isTizen()) {
                 this.listDirectory = Thesis.Tizen.listDirectory;
                 s.pictureDir = "images";
