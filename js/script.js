@@ -1033,11 +1033,11 @@ Thesis.Tizen = (function() {
             }, "r");
 
             /* Detta listar bilder från kameran.
-			   gManager.find(onFindSuccess, onFindError,
-				"7bbfe1cb-79dc-4477-b76c-086add396af1" ,
-				mediaType == "ALL" ? null : new tizen.AttributeFilter("type", "EXACTLY", "IMAGE"),
-				new tizen.SortMode("title", "ASC"));
-			 */
+               gManager.find(onFindSuccess, onFindError,
+                "7bbfe1cb-79dc-4477-b76c-086add396af1" ,
+                mediaType == "ALL" ? null : new tizen.AttributeFilter("type", "EXACTLY", "IMAGE"),
+                new tizen.SortMode("title", "ASC"));
+             */
         },
     }
 }(jQuery));
