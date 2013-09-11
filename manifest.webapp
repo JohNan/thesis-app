@@ -20,6 +20,7 @@
         "30":"/img/icon-30.png"
     },
     "permissions": {
+        "device-storage:sdcard":{ "access": "readonly" },
 		"device-storage:pictures":{ "access": "readonly" }		
 	},
 	"type": "privileged"

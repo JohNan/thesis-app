@@ -112,7 +112,7 @@ Thesis.Gallery = (function() {
                 s.pictureDir = "DCIM/Camera";
             } else if (Thesis.Settings.isFireFox()) {
                 this.listDirectory = Thesis.Firefox.listDirectory;
-                s.pictureDir = "pictures";
+                s.pictureDir = "DCIM/Camera";
             } else if (Thesis.Settings.isTizen()) {
                 this.listDirectory = Thesis.Tizen.listDirectory;
                 s.pictureDir = "images";
@@ -807,8 +807,15 @@ Thesis.Firefox = (function() {
 
         listDirectory: function(path, suffix, callback) {
             var pics = navigator.getDeviceStorage(path);
-            var cursor = pics.enumerate();
             var dirs = [];
+            if(pics == null) {
+                callback(dirs);
+                Thesis.Settings.device.firefox = false;
+                Thesis.Settings.device.desktop = true;
+                return;                
+            }
+
+            var cursor = pics.enumerate();            
             var allowedFileTypes = ["image/png", "image/jpeg", "image/gif"];
             var state;
 
@@ -893,7 +900,8 @@ Thesis.Tizen = (function() {
             var dirs = [];
             var onsuccess = function(files) {
                 for (var i = 0; i < files.length; i++) {
-
+                    console.log(files[i].name);
+                    console.log(files[i].fullPath);
                     var dir = {
                         name: files[i].name,
                         fullPath: files[i].toURI()
