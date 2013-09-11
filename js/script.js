@@ -69,6 +69,9 @@ Thesis.Settings = (function() {
 
 Thesis.Gallery = (function() {
     var s = null;
+    var that = null;
+    var currentZoom = 1.0;
+    var lastDist = null;
 
     return {
         settings: {
@@ -98,7 +101,7 @@ Thesis.Gallery = (function() {
             console.log("<-- Gallery init start -->");
 
             s = this.settings;
-            s.obj = this;
+            s.obj = that = this;
             Thesis.Messure.start("load-gallery");
 
             s.maxWidth = Math.floor(($(document).innerWidth() / 2) - (s.imageMargin * 4) - 15);
@@ -264,17 +267,83 @@ Thesis.Gallery = (function() {
             var moveX = 0;
             var tap = true;
             var tracks = [];
+            var multiTouch = false;
+            var startDist = 0;
 
-            $("#fullscreen-image-container-prev, #fullscreen-image-container-current, #fullscreen-image-container-next").bind("vmousedown vmouseup vmousemove", function(event) {
+            var pinchScale = 1;
+            var lastScale = 1;
+            var maxScale = 3.0;
+            var minScale = 1.0;
+            $("#fullscreen-image-container-prev, #fullscreen-image-container-current, #fullscreen-image-container-next").bind("vmousedown vmouseup vmousemove touchmove touchstart touchend", function(event) {
                 event.preventDefault();
                 event.stopPropagation();
-
+               
                 //If right click do nothing.
                 if (event.button === 2) {
                     return false;
                 }
 
-                if (event.type == 'vmousedown') {
+                if (event.type == 'touchmove') {
+                    if (event.originalEvent.touches.length === 2) {
+                        tap = false;
+                        multiTouch = true;
+                        console.log("TWO TOUCH POINTS!");
+                        //track the touches, I'm setting each touch as an array inside the tracks array
+                        //each touch array contains an X and Y coordinate
+                        var canvas = currentPicObj.find("canvas")[0];
+                        var imageObj = s.fullscreenImg[canvas.id];
+
+                        var dist =
+                        Math.sqrt(
+                            Math.pow((event.originalEvent.touches[1].pageX - event.originalEvent.touches[0].pageX),2)
+                            +
+                            Math.pow((event.originalEvent.touches[1].pageY - event.originalEvent.touches[0].pageY),2)
+                        );
+                        pinchScale = dist/startDist;                        
+
+                        var ctx = canvas.getContext("2d").reset();
+                        
+                        console.log(pinchScale);
+
+                        ctx.save();
+                        ctx.translate(canvas.width / 2, canvas.height / 2);                        
+                        ctx.scale(imageObj.ratio*lastScale,imageObj.ratio*lastScale);
+
+                        ctx.scale(pinchScale,pinchScale);
+
+                        ctx.drawImage(imageObj.imageData, -imageObj.imageData.width / 2, -imageObj.imageData.height / 2);
+                        ctx.restore();
+                    }
+                } else if (event.type == 'touchstart') {
+                    tracks = [];
+                    if (event.originalEvent.touches.length === 2) {  
+                        var canvas = currentPicObj.find("canvas")[0];
+                        var imageObj = s.fullscreenImg[canvas.id];
+                        var ctx = canvas.getContext("2d");
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        console.log("touchstart: " + lastScale);
+
+                        startDist =
+                        Math.sqrt(
+                            Math.pow((event.originalEvent.touches[1].pageX - event.originalEvent.touches[0].pageX),2)
+                            +
+                            Math.pow((event.originalEvent.touches[1].pageY - event.originalEvent.touches[0].pageY),2)
+                        );
+
+                        ctx.save();
+                        ctx.translate(canvas.width / 2, canvas.height / 2);                        
+                        ctx.scale(imageObj.ratio*lastScale,imageObj.ratio*lastScale);
+                        ctx.scale(1,1);
+
+                        ctx.drawImage(imageObj.imageData, -imageObj.imageData.width / 2, -imageObj.imageData.height / 2);
+                        ctx.restore();                        
+                    }
+                    
+                } else if (event.type == 'touchend') {
+                    multiTouch = false
+                    lastScale = pinchScale;
+                    console.log("touchend: " + lastScale);
+                } else if (event.type == 'vmousedown') {
                     moveX = 0;
                     startX = event.pageX;
 
@@ -289,8 +358,6 @@ Thesis.Gallery = (function() {
                     nextPicObj.show();
                     prevPicObj.show();
                 } else if (event.type == 'vmouseup') {
-                    tracks = [];
-
                     if (tap) {
                         currentPicObj.parent().hide();
                         prevPicObj.parent().hide();
@@ -299,6 +366,7 @@ Thesis.Gallery = (function() {
                         s.obj.closeFullscreenView();
                         s.inFullscreenMode = false;
                         tap = false;
+                        lastScale = 1.0;
                     } else if (currentPicObj != null) {
                         var center = s.windowWidth / 2;
                         var offLeft = currentPicObj.offset().left;
@@ -393,31 +461,21 @@ Thesis.Gallery = (function() {
                         }
                     }
                     draggable = null;
-                } else if (event.type == 'vmousemove') {
-                    if (event.originalEvent.touches != undefined && event.originalEvent.touches.length === 2) {
-                        //track the touches, I'm setting each touch as an array inside the tracks array
-                        //each touch array contains an X and Y coordinate
-                        tracks.push([
-                            [event.pageX, event.pageY],
-                            [event.pageX, event.pageY]
-                        ]);
-                    } else {
-                        moveX = event.pageX - startX;
-                        if (Math.abs(moveX) > s.moveLimit && draggable) {
-                            tap = false;
-                            draggable.offset({
-                                left: moveX
-                            });
+                } else if (event.type == 'vmousemove') { moveX = event.pageX - startX;
+                    if (Math.abs(moveX) > s.moveLimit && draggable && !multiTouch) {
+                        tap = false;
+                        draggable.offset({
+                            left: moveX
+                        });
 
-                            nextPicObj.offset({
-                                left: moveX + s.windowWidth
-                            });
+                        nextPicObj.offset({
+                            left: moveX + s.windowWidth
+                        });
 
-                            prevPicObj.offset({
-                                left: moveX - s.windowWidth
-                            });
-                        }
-                    }
+                        prevPicObj.offset({
+                            left: moveX - s.windowWidth
+                        });
+                    }                    
                 }
             });
 
@@ -442,7 +500,7 @@ Thesis.Gallery = (function() {
                 var canvas = currentPicObj.find("canvas")[0];
                 var imageObj = s.fullscreenImg[canvas.id];
 
-                s.obj.invertCanvas(canvas, imageObj);
+                s.obj.invertCanvas(canvas, imageObj);                
             });
 
             $("#content").on("click", "canvas", function(event) {
@@ -482,6 +540,44 @@ Thesis.Gallery = (function() {
 
                 s.inFullscreenMode = true;
             });
+        },
+        scaleImage: function (canvas, imageObj, event) {
+            var ctx = canvas.getContext("2d").reset();
+            
+            var startXa = 326;
+            var startYa = 102;
+
+            var startXb = 90;
+            var startYb = 466;
+
+            var endXa = 236;
+            var endYa = 255;
+
+            var endXb = 142;
+            var endYb = 360;
+
+            var dista = Math.sqrt((startXb-startXa)*(startXb-startXa) + (startYb-startYa)*(startYb-startYa));
+            var distb = Math.sqrt((endXb-endXa)*(endXb-endXa) + (endYb-endXa)*(endYb-endXa));  
+
+            var dist = distb/dista;
+
+            if(!lastDist) {
+                lastDist = dist;
+            }
+
+            var scale = currentZoom * dist;
+
+            console.log(scale);
+
+            currentZoom *= scale;
+            lastDist = dist;
+            
+
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.scale(scale,scale);
+            ctx.drawImage(imageObj.imageData, -imageObj.imageData.width / 2, -imageObj.imageData.height / 2);
+            ctx.restore();
         },
 
         closeFullscreenView: function() {
@@ -530,29 +626,24 @@ Thesis.Gallery = (function() {
                 var maxHeight = $(window).height() - s.footerHeight - s.headerHeight;
                 var ratio = 1;
 
-                ratio = maxWidth / image.width;
+                ratio = that.getRatio(image);
                 var sourceWidth = image.width * ratio;
                 var sourceHeight = image.height * ratio;
-
-                if (image.height > image.width) {
-                    ratio = maxHeight / image.height;
-                    sourceWidth = image.width * ratio;
-                    sourceHeight = image.height * ratio;
-                } else if (sourceHeight > maxHeight) {
-                    ratio = maxHeight / image.height;
-                    sourceWidth = image.width * ratio;
-                    sourceHeight = image.height * ratio;
-                }
 
                 trgCanvas.width = maxWidth;
                 trgCanvas.height = maxHeight;
 
+                s.fullscreenImg[trgCanvas.id].ratio = ratio;
                 s.fullscreenImg[trgCanvas.id].maxWidth = maxWidth;
                 s.fullscreenImg[trgCanvas.id].maxHeight = maxHeight;
                 s.fullscreenImg[trgCanvas.id].width = sourceWidth;
                 s.fullscreenImg[trgCanvas.id].height = sourceHeight;
-                ctx.drawImage(image, 0, 0, image.width - 2, image.height, (maxWidth - sourceWidth) / 2, (maxHeight - sourceHeight) / 2, sourceWidth, sourceHeight);
-
+                ctx.save();
+                ctx.translate(trgCanvas.width / 2, trgCanvas.height / 2);
+                //ctx.translate(image.width / 2, image.height / 2);
+                ctx.scale(ratio,ratio);
+                ctx.drawImage(image, -image.width / 2, -image.height / 2);
+                ctx.restore();
                 if (callback) {
                     //Load and draw image - timer start
                     callback.stop("load-image-" + s.fileList[imageIndex].name);
@@ -563,12 +654,30 @@ Thesis.Gallery = (function() {
             s.fullscreenImg[trgCanvas.id].imageData = image;
         },
 
+        getRatio: function (image) {
+            var maxWidth = $(window).width();
+            var maxHeight = $(window).height() - s.footerHeight - s.headerHeight;    
+            var ratio = maxWidth / image.width;
+            var sourceHeight = image.height * ratio;
+
+            if (image.height > image.width) {
+                ratio = maxHeight / image.height;
+            } else if (sourceHeight > maxHeight) {
+                ratio = maxHeight / image.height;
+            }
+
+            return ratio;
+        },
+
         rotateCanvas: function(canvas, imageObj, degrees) {
             var ctx = canvas.getContext("2d").reset();
+            var ratio = that.getRatio(imageObj.imageData);
+            
             ctx.save();
             ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.scale(ratio,ratio);
             ctx.rotate(degrees * Math.PI / 180);
-            ctx.drawImage(imageObj.imageData, 0, 0, imageObj.imageData.width - 2, imageObj.imageData.height, -(canvas.width) / 2 + (canvas.width - imageObj.width) / 2, -(canvas.height) / 2 + (canvas.height - imageObj.height) / 2, imageObj.width, imageObj.height);
+            ctx.drawImage(imageObj.imageData, -imageObj.imageData.width / 2, -imageObj.imageData.height / 2);
             ctx.restore();
         },
 
@@ -680,6 +789,16 @@ Thesis.PhoneGap = (function() {
             s = this.settings;
             console.log("Load filesystem init");
             window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, this.onFileSystemSuccess, this.fail);
+
+            document.addEventListener("backbutton", function(e){
+                if (Thesis.Gallery.settings.inFullscreenMode) {
+                    Thesis.Gallery.closeFullscreenView();
+                } else {
+                    tizen.application.getCurrentApplication().exit();
+                }
+            }, false);
+
+            Thesis.Gallery.init();
         },
 
         listDirectory: function(path, suffix, callback) {
@@ -738,9 +857,6 @@ Thesis.PhoneGap = (function() {
 
         onFileSystemSuccess: function(fileSystem) {
             var g = Thesis.PhoneGap;
-            console.log(fileSystem.name);
-            console.log(fileSystem.root.fullPath);
-
             rootDir = fileSystem.root;
         },
 
@@ -878,7 +994,6 @@ Thesis.Tizen = (function() {
             document.addEventListener('tizenhwkey', function(e) {
                 if (e.keyName == "back") {
                     console.log("Back pressed");
-                    console.log(Thesis.Gallery.settings.inFullscreenMode);
                     if (Thesis.Gallery.settings.inFullscreenMode) {
                         Thesis.Gallery.closeFullscreenView();
                     } else {
@@ -1013,8 +1128,7 @@ $(function() {
         Thesis.Firefox.init();
     } else if (navigator.userAgent.match(/(iPhone|iPod|iPad|Android|BlackBerry|IEMobile)/)) {
         document.addEventListener("deviceready", function() {
-            Thesis.PhoneGap.init();
-            Thesis.Gallery.init();
+            Thesis.PhoneGap.init();            
         }, false);
     } else if (navigator.userAgent.match(/(Tizen)/)) {
         Thesis.Tizen.init();
