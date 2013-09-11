@@ -101,7 +101,7 @@ Thesis.Gallery = (function() {
             console.log("<-- Gallery init start -->");
 
             s = this.settings;
-            s.obj = that = this;
+            that = this;
             Thesis.Messure.start("load-gallery");
 
             s.maxWidth = Math.floor(($(document).innerWidth() / 2) - (s.imageMargin * 4) - 15);
@@ -211,7 +211,7 @@ Thesis.Gallery = (function() {
                 };
 
                 var galleryRefresh = function(fileList) {
-                    if (!s.obj.inFullscreenMode) {
+                    if (!that.inFullscreenMode) {
                         return;
                     }
                     var preLength = s.fileList.length;
@@ -240,28 +240,12 @@ Thesis.Gallery = (function() {
 
                 this.listDirectory(s.pictureDir, "jpg", printDirPath);
                 var refresh = setInterval(function() {
-                    s.obj.listDirectory(s.pictureDir, "jpg", galleryRefresh);
+                    that.listDirectory(s.pictureDir, "jpg", galleryRefresh);
                 }, 10000);
             }
         },
 
-        bindUIActions: function(images) {
-            if (s.fileList.length == 0) {
-                s.fileList = images;
-            }
-
-
-            $(window).scroll(function() {
-                var g = Thesis.Gallery;
-                if ($(window).scrollTop() == $(document).height() - $(window).height()) {
-                    g.loadGallery(g.settings.fileList, g.settings.step);
-
-                }
-            });
-
-            var prevPicObj = null;
-            var currentPicObj = null;
-            var nextPicObj = null;
+        touchEvents: (function () {
             var draggable = null;
             var startX = 0;
             var moveX = 0;
@@ -274,23 +258,66 @@ Thesis.Gallery = (function() {
             var lastScale = 1;
             var maxScale = 3.0;
             var minScale = 1.0;
-            $("#fullscreen-image-container-prev, #fullscreen-image-container-current, #fullscreen-image-container-next").bind("vmousedown vmouseup vmousemove touchmove touchstart touchend", function(event) {
-                event.preventDefault();
-                event.stopPropagation();
-               
-                //If right click do nothing.
-                if (event.button === 2) {
-                    return false;
-                }
 
-                if (event.type == 'touchmove') {
-                    if (event.originalEvent.touches.length === 2) {
+            return {
+                //Public variables
+                prevPicObj: null,
+                currentPicObj: null,
+                nextPicObj: null,
+
+                touchStart: function (event) {
+                    //this gets poluted somhow and cant be used.
+                    var touch = Thesis.Gallery.touchEvents;
+                    
+                    //If right click do nothing.
+                    if (event.button === 2) {
+                        return false;
+                    }
+
+                    if (event.type != 'vmousedown' && event.originalEvent.touches.length === 2) {  
+                        var canvas = touch.currentPicObj.find("canvas")[0];
+                        var imageObj = s.fullscreenImg[canvas.id];
+                        var ctx = canvas.getContext("2d");
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        console.log("touchstart: " + lastScale);
+
+                        startDist =
+                        Math.sqrt(
+                            Math.pow((event.originalEvent.touches[1].pageX - event.originalEvent.touches[0].pageX),2)
+                            +
+                            Math.pow((event.originalEvent.touches[1].pageY - event.originalEvent.touches[0].pageY),2)
+                        );
+
+                        ctx.save();
+                        ctx.translate(canvas.width / 2, canvas.height / 2);                        
+                        ctx.scale(imageObj.ratio*lastScale,imageObj.ratio*lastScale);
+                        ctx.scale(1,1);
+
+                        ctx.drawImage(imageObj.imageData, -imageObj.imageData.width / 2, -imageObj.imageData.height / 2);
+                        ctx.restore();                        
+                    } else {
+                        moveX = 0;
+                        startX = event.pageX;
+
+                        //If draggeble != null, we are still dragging. Tap should not be set to true to hide the fullscreen.
+                        if (draggable == null) {
+                            tap = true;
+                        }
+
+                        draggable = $(event.currentTarget);
+                        touch.currentPicObj = $(event.currentTarget);
+                        console.log(touch.nextPicObj);
+                        touch.nextPicObj.show();
+                        touch.prevPicObj.show();
+                    }
+                },
+
+                touchMove: function (event) {
+                    var touch = Thesis.Gallery.touchEvents;
+                    if (event.type == 'touchmove' && event.originalEvent.touches.length === 2) {
                         tap = false;
                         multiTouch = true;
-                        console.log("TWO TOUCH POINTS!");
-                        //track the touches, I'm setting each touch as an array inside the tracks array
-                        //each touch array contains an X and Y coordinate
-                        var canvas = currentPicObj.find("canvas")[0];
+                        var canvas = touch.currentPicObj.find("canvas")[0];
                         var imageObj = s.fullscreenImg[canvas.id];
 
                         var dist =
@@ -313,194 +340,179 @@ Thesis.Gallery = (function() {
 
                         ctx.drawImage(imageObj.imageData, -imageObj.imageData.width / 2, -imageObj.imageData.height / 2);
                         ctx.restore();
-                    }
-                } else if (event.type == 'touchstart') {
-                    tracks = [];
-                    if (event.originalEvent.touches.length === 2) {  
-                        var canvas = currentPicObj.find("canvas")[0];
-                        var imageObj = s.fullscreenImg[canvas.id];
-                        var ctx = canvas.getContext("2d");
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        console.log("touchstart: " + lastScale);
+                    } else if (event.type == 'vmousemove') { 
+                        moveX = event.pageX - startX;
+                        if (Math.abs(moveX) > s.moveLimit && draggable && !multiTouch) {
+                            tap = false;
+                            draggable.offset({
+                                left: moveX
+                            });
 
-                        startDist =
-                        Math.sqrt(
-                            Math.pow((event.originalEvent.touches[1].pageX - event.originalEvent.touches[0].pageX),2)
-                            +
-                            Math.pow((event.originalEvent.touches[1].pageY - event.originalEvent.touches[0].pageY),2)
-                        );
+                            touch.nextPicObj.offset({
+                                left: moveX + s.windowWidth
+                            });
 
-                        ctx.save();
-                        ctx.translate(canvas.width / 2, canvas.height / 2);                        
-                        ctx.scale(imageObj.ratio*lastScale,imageObj.ratio*lastScale);
-                        ctx.scale(1,1);
-
-                        ctx.drawImage(imageObj.imageData, -imageObj.imageData.width / 2, -imageObj.imageData.height / 2);
-                        ctx.restore();                        
-                    }
-                    
-                } else if (event.type == 'touchend') {
-                    multiTouch = false
-                    lastScale = pinchScale;
-                    console.log("touchend: " + lastScale);
-                } else if (event.type == 'vmousedown') {
-                    moveX = 0;
-                    startX = event.pageX;
-
-                    //If draggeble != null, we are still dragging. Tap should not be set to true to hide the fullscreen.
-                    if (draggable == null) {
-                        tap = true;
-                    }
-
-                    draggable = $(this);
-                    currentPicObj = $(this);
-
-                    nextPicObj.show();
-                    prevPicObj.show();
-                } else if (event.type == 'vmouseup') {
-                    if (tap) {
-                        currentPicObj.parent().hide();
-                        prevPicObj.parent().hide();
-                        nextPicObj.parent().hide();
-
-                        s.obj.closeFullscreenView();
-                        s.inFullscreenMode = false;
-                        tap = false;
-                        lastScale = 1.0;
-                    } else if (currentPicObj != null) {
-                        var center = s.windowWidth / 2;
-                        var offLeft = currentPicObj.offset().left;
-                        var offRight = currentPicObj.offset().left + currentPicObj.width();
-                        var currentImageIndex = parseInt(currentPicObj.find("canvas")[0].getAttribute("data-id"),10);
-
-                        if (offRight < center && offLeft < 0) {
-                            //slide out left
-                            if (s.fileList.length > currentImageIndex + 1) {
-                                currentPicObj.animate({
-                                    "left": -currentPicObj.width()
-                                }, "fast");
-                                nextPicObj.animate({
-                                    "left": 0
-                                }, "fast");
-
-                                tmp = currentPicObj;
-                                currentPicObj = nextPicObj;
-                                nextPicObj = prevPicObj;
-                                prevPicObj = tmp;
-
-                                tmp = null;
-
-                                var imageIndexLeft = parseInt(currentPicObj.find("canvas")[0].getAttribute("data-id"),10);
-                                var trgCanvasLeft = nextPicObj.find("canvas")[0];
-
-                                if (s.fileList.length > imageIndexLeft + 1) {
-                                    s.obj.loadPicture(trgCanvasLeft, imageIndexLeft + 1);
-                                } else {
-                                    //No more images. Clear the next obj.                              
-                                    nextPicObj.find("canvas")[0].getContext("2d").reset();
-                                }
-                            } else {
-                                currentPicObj.animate({
-                                    "left": 0
-                                }, "fast");
-                                nextPicObj.animate({
-                                    "left": s.windowWidth
-                                }, "fast");
-                            }
-                        } else if (offLeft > center && offRight > s.windowWidth) {
-                            //slide out right                            
-                            if (currentImageIndex - 1 >= 0) {
-                                currentPicObj.animate({
-                                    "left": s.windowWidth
-                                }, "fast");
-                                prevPicObj.animate({
-                                    "left": 0
-                                }, "fast");
-
-                                tmp = currentPicObj;
-                                currentPicObj = prevPicObj;
-                                prevPicObj = nextPicObj;
-                                nextPicObj = tmp;
-
-                                tmp = null;
-
-                                var imageIndexRight = parseInt(currentPicObj.find("canvas")[0].getAttribute("data-id"),10);
-                                var trgCanvasRight = prevPicObj.find("canvas")[0];
-
-                                if (imageIndexRight - 1 >= 0) {
-                                    s.obj.loadPicture(trgCanvasRight, imageIndexRight - 1);
-                                } else {
-                                    //No more images. Clear the previous obj.
-                                    prevPicObj.find("canvas")[0].getContext("2d").reset();
-                                }
-                            } else {
-                                currentPicObj.animate({
-                                    "left": 0
-                                }, "fast");
-                                prevPicObj.animate({
-                                    "left": -s.windowWidth
-                                }, "fast");
-                            }
-
-                        } else if (offLeft < center && offRight > s.windowWidth) {
-                            //slide back from right
-                            currentPicObj.animate({
-                                "left": 0
-                            }, "fast");
-                            prevPicObj.animate({
-                                "left": -s.windowWidth
-                            }, "fast");
-                        } else if (offLeft < 0 && offRight > center) {
-                            //slide back from left
-                            currentPicObj.animate({
-                                "left": 0
-                            }, "fast");
-                            nextPicObj.animate({
-                                "left": s.windowWidth
-                            }, "fast");
+                            touch.prevPicObj.offset({
+                                left: moveX - s.windowWidth
+                            });
                         }
                     }
-                    draggable = null;
-                } else if (event.type == 'vmousemove') { moveX = event.pageX - startX;
-                    if (Math.abs(moveX) > s.moveLimit && draggable && !multiTouch) {
-                        tap = false;
-                        draggable.offset({
-                            left: moveX
-                        });
+                },
 
-                        nextPicObj.offset({
-                            left: moveX + s.windowWidth
-                        });
+                touchEnd: function (event) {
+                    var touch = Thesis.Gallery.touchEvents;
+                    if (event.type == 'touchend') {
+                        multiTouch = false
+                        lastScale = pinchScale;
+                    } else if (event.type == 'vmouseup') {
+                        if (tap) {
+                            touch.currentPicObj.parent().hide();
+                            touch.prevPicObj.parent().hide();
+                            touch.nextPicObj.parent().hide();
 
-                        prevPicObj.offset({
-                            left: moveX - s.windowWidth
-                        });
-                    }                    
+                            that.closeFullscreenView();
+                            s.inFullscreenMode = false;
+                            tap = false;
+                            lastScale = 1.0;
+                        } else if (touch.currentPicObj != null) {
+                            var center = s.windowWidth / 2;
+                            var offLeft = touch.currentPicObj.offset().left;
+                            var offRight = touch.currentPicObj.offset().left + touch.currentPicObj.width();
+                            var currentImageIndex = parseInt(touch.currentPicObj.find("canvas")[0].getAttribute("data-id"),10);
+
+                            if (offRight < center && offLeft < 0) {
+                                //slide out left
+                                if (s.fileList.length > currentImageIndex + 1) {
+                                    touch.currentPicObj.animate({
+                                        "left": -touch.currentPicObj.width()
+                                    }, "fast");
+                                    touch.nextPicObj.animate({
+                                        "left": 0
+                                    }, "fast");
+
+                                    tmp = touch.currentPicObj;
+                                    touch.currentPicObj = touch.nextPicObj;
+                                    touch.nextPicObj = touch.prevPicObj;
+                                    touch.prevPicObj = tmp;
+
+                                    tmp = null;
+
+                                    var imageIndexLeft = parseInt(touch.currentPicObj.find("canvas")[0].getAttribute("data-id"),10);
+                                    var trgCanvasLeft = touch.nextPicObj.find("canvas")[0];
+
+                                    if (s.fileList.length > imageIndexLeft + 1) {
+                                        that.loadPicture(trgCanvasLeft, imageIndexLeft + 1);
+                                    } else {
+                                        //No more images. Clear the next obj.                              
+                                        touch.nextPicObj.find("canvas")[0].getContext("2d").reset();
+                                    }
+                                } else {
+                                    touch.currentPicObj.animate({
+                                        "left": 0
+                                    }, "fast");
+                                    touch.nextPicObj.animate({
+                                        "left": s.windowWidth
+                                    }, "fast");
+                                }
+                            } else if (offLeft > center && offRight > s.windowWidth) {
+                                //slide out right                            
+                                if (currentImageIndex - 1 >= 0) {
+                                    touch.currentPicObj.animate({
+                                        "left": s.windowWidth
+                                    }, "fast");
+                                    touch.prevPicObj.animate({
+                                        "left": 0
+                                    }, "fast");
+
+                                    tmp = touch.currentPicObj;
+                                    touch.currentPicObj = touch.prevPicObj;
+                                    touch.prevPicObj = touch.nextPicObj;
+                                    touch.nextPicObj = tmp;
+
+                                    tmp = null;
+
+                                    var imageIndexRight = parseInt(touch.currentPicObj.find("canvas")[0].getAttribute("data-id"),10);
+                                    var trgCanvasRight = touch.prevPicObj.find("canvas")[0];
+
+                                    if (imageIndexRight - 1 >= 0) {
+                                        that.loadPicture(trgCanvasRight, imageIndexRight - 1);
+                                    } else {
+                                        //No more images. Clear the previouthat.
+                                        touch.prevPicObj.find("canvas")[0].getContext("2d").reset();
+                                    }
+                                } else {
+                                    touch.currentPicObj.animate({
+                                        "left": 0
+                                    }, "fast");
+                                    touch.prevPicObj.animate({
+                                        "left": -s.windowWidth
+                                    }, "fast");
+                                }
+
+                            } else if (offLeft < center && offRight > s.windowWidth) {
+                                //slide back from right
+                                touch.currentPicObj.animate({
+                                    "left": 0
+                                }, "fast");
+                                touch.prevPicObj.animate({
+                                    "left": -s.windowWidth
+                                }, "fast");
+                            } else if (offLeft < 0 && offRight > center) {
+                                //slide back from left
+                                touch.currentPicObj.animate({
+                                    "left": 0
+                                }, "fast");
+                                touch.nextPicObj.animate({
+                                    "left": s.windowWidth
+                                }, "fast");
+                            }
+                        }
+                        draggable = null;
+                    }
+                }
+            }
+        })(),
+
+        bindUIActions: function(images) {
+            if (s.fileList.length == 0) {
+                s.fileList = images;
+            }
+
+            $(window).scroll(function() {
+                var g = Thesis.Gallery;
+                if ($(window).scrollTop() == $(document).height() - $(window).height()) {
+                    g.loadGallery(g.settings.fileList, g.settings.step);
+
                 }
             });
+            
+            var fullscreenContainers = $("#fullscreen-image-container-prev, #fullscreen-image-container-current, #fullscreen-image-container-next");
+            fullscreenContainers.bind("vmousedown touchstart", that.touchEvents.touchStart);
+            fullscreenContainers.bind("vmouseup touchend", that.touchEvents.touchEnd);
+            fullscreenContainers.bind("vmousemove touchmove", that.touchEvents.touchMove);
 
             $("#rotate-left").on("click", function(event) {
                 console.log("Rotate left.");
-                var canvas = currentPicObj.find("canvas")[0];
+                var canvas = that.touchEvents.currentPicObj.find("canvas")[0];
                 var imageObj = s.fullscreenImg[canvas.id];
 
-                s.obj.rotateCanvas(canvas, imageObj, s.fullscreenImg[canvas.id].angle -= 30);
+                that.rotateCanvas(canvas, imageObj, s.fullscreenImg[canvas.id].angle -= 30);
             });
 
             $("#rotate-right").on("click", function(event) {
                 console.log("Rotate right.");
-                var canvas = currentPicObj.find("canvas")[0];
+                var canvas = that.touchEvents.currentPicObj.find("canvas")[0];
                 var imageObj = s.fullscreenImg[canvas.id];
 
-                s.obj.rotateCanvas(canvas, imageObj, s.fullscreenImg[canvas.id].angle += 30);
+                that.rotateCanvas(canvas, imageObj, s.fullscreenImg[canvas.id].angle += 30);
             });
 
             $("#invert").on("click", function(event) {
                 console.log("Invert.");
-                var canvas = currentPicObj.find("canvas")[0];
+                var canvas = that.touchEvents.currentPicObj.find("canvas")[0];
                 var imageObj = s.fullscreenImg[canvas.id];
 
-                s.obj.invertCanvas(canvas, imageObj);                
+                that.invertCanvas(canvas, imageObj);                
             });
 
             $("#content").on("click", "canvas", function(event) {
@@ -511,25 +523,25 @@ Thesis.Gallery = (function() {
                 var imageIndex = parseInt(srcCanvas1.getAttribute("data-id"),10);
 
                 currentCanvas.getContext("2d").reset();
-                currentPicObj = s.obj.resetFullscreenImageContainer(currentCanvas, 0);
+                that.touchEvents.currentPicObj = that.resetFullscreenImageContainer(currentCanvas, 0);
 
                 nextCanvas.getContext("2d").reset();
-                nextPicObj = s.obj.resetFullscreenImageContainer(nextCanvas, s.windowWidth);
+                that.touchEvents.nextPicObj = that.resetFullscreenImageContainer(nextCanvas, s.windowWidth);
 
                 prevCanvas.getContext("2d").reset();
-                prevPicObj = s.obj.resetFullscreenImageContainer(prevCanvas, -s.windowWidth);
+                that.touchEvents.prevPicObj = that.resetFullscreenImageContainer(prevCanvas, -s.windowWidth);
 
                 //Load next image
                 if (imageIndex + 1 <= s.fileList.length - 1) {
-                    s.obj.loadPicture(nextCanvas, (imageIndex + 1));
+                    that.loadPicture(nextCanvas, (imageIndex + 1));
                 }
 
                 //Load previous image
                 if (imageIndex - 1 >= 0) {
-                    s.obj.loadPicture(prevCanvas, (imageIndex - 1));
+                    that.loadPicture(prevCanvas, (imageIndex - 1));
                 }
 
-                s.obj.loadPicture(currentCanvas, imageIndex, Thesis.Messure);
+                that.loadPicture(currentCanvas, imageIndex, Thesis.Messure);
 
                 $("#fullscreen").show();
                 $("#footer").offset({
@@ -775,6 +787,7 @@ Thesis.Gallery = (function() {
 
 Thesis.PhoneGap = (function() {
     var rootDir = null;
+    var that = null;
     var s;
 
     return {
@@ -787,6 +800,7 @@ Thesis.PhoneGap = (function() {
             Thesis.Settings.device.phonegap = true;
 
             s = this.settings;
+            that = this;
             console.log("Load filesystem init");
             window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, this.onFileSystemSuccess, this.fail);
 
