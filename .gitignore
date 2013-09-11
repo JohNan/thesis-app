@@ -1,2 +1,8 @@
 # OS X
 .DS_Store
+index.html
+img/
+css/ima*
+css/jq*
+css/my*
+js/*mobile*
