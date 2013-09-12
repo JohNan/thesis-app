@@ -255,9 +255,15 @@ Thesis.Gallery = (function() {
 
         touchEvents: (function () {
             var draggable = null;
-            var startX = 0;
-            var moveX = 0;
-            var tap = true;
+            var start = {
+                   X: 0,
+                   Y: 0
+                };
+            var move = {
+                    X: 0,
+                    Y: 0
+                };
+            var zoomed = false;
             var tracks = [];
             var multiTouch = false;
             var startDist = 0;
@@ -272,21 +278,32 @@ Thesis.Gallery = (function() {
                 prevPicObj: null,
                 currentPicObj: null,
                 nextPicObj: null,
+                lastScale: 1,
 
                 touchStart: function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
                     //this gets poluted somhow and cant be used.
                     var touch = Thesis.Gallery.touchEvents;
-                    
+                    var pageX = event.pageX || event.originalEvent.touches[0].pageX || event.originalEvent.changedTouches[0].pageX;
+                    var pageY = event.pageY || event.originalEvent.touches[0].pageY || event.originalEvent.changedTouches[0].pageY;
+
                     //If right click do nothing.
                     if (event.button === 2) {
                         return false;
                     }
 
-                    if (event.type != 'vmousedown' && event.originalEvent.touches.length === 2) {  
+                    if (event.type == 'touchstart' && event.originalEvent.touches.length === 2) {  
                         var canvas = touch.currentPicObj.find("canvas")[0];
                         var imageObj = s.fullscreenImg[canvas.id];
-                        var ctx = canvas.getContext("2d");
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);                        
+                                  
+                        //Dont zoom further than the image width             
+                        if($(window).width() > imageObj.imageData.width*imageObj.ratio*touch.lastScale) {
+                            touch.lastScale = 1;
+                            zoomed = false;
+                            return;
+                        }
 
                         startDist =
                         Math.sqrt(
@@ -294,22 +311,18 @@ Thesis.Gallery = (function() {
                             +
                             Math.pow((event.originalEvent.touches[1].pageY - event.originalEvent.touches[0].pageY),2)
                         );
-
-                        ctx.save();
-                        ctx.translate(canvas.width / 2, canvas.height / 2);                        
-                        ctx.scale(imageObj.ratio*lastScale,imageObj.ratio*lastScale);
-                        ctx.scale(1,1);
-
-                        ctx.drawImage(imageObj.imageData, -imageObj.imageData.width / 2, -imageObj.imageData.height / 2);
-                        ctx.restore();                        
-                    } else {
-                        moveX = 0;
-                        startX = event.pageX;
-
-                        //If draggeble != null, we are still dragging. Tap should not be set to true to hide the fullscreen.
-                        if (draggable == null) {
-                            tap = true;
-                        }
+                        var scale = touch.lastScale; 
+                        that.scaleCanvas(canvas, imageObj, scale);
+                        zoomed = true;                        
+                    } else {       
+                        move = {
+                            X: 0,
+                            Y: 0
+                        };
+                        start = {
+                            X: pageX,
+                            Y: pageY
+                        };
 
                         draggable = $(event.currentTarget);
                         touch.currentPicObj = $(event.currentTarget);
@@ -320,9 +333,16 @@ Thesis.Gallery = (function() {
                 },
 
                 touchMove: function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
                     var touch = Thesis.Gallery.touchEvents;
+                    //PageX is located differently depending of what event. 
+                    var pageX = event.pageX || event.originalEvent.touches[0].pageX || event.originalEvent.changedTouches[0].pageX;
+                    var pageY = event.pageY || event.originalEvent.touches[0].pageY || event.originalEvent.changedTouches[0].pageY;
+
+                    //Multi touch i.e. 2 touch points
                     if (event.type == 'touchmove' && event.originalEvent.touches.length === 2) {
-                        tap = false;
                         multiTouch = true;
                         var canvas = touch.currentPicObj.find("canvas")[0];
                         var imageObj = s.fullscreenImg[canvas.id];
@@ -333,55 +353,54 @@ Thesis.Gallery = (function() {
                             +
                             Math.pow((event.originalEvent.touches[1].pageY - event.originalEvent.touches[0].pageY),2)
                         );
-                        pinchScale = dist/startDist;                        
-
-                        var ctx = canvas.getContext("2d").reset();
+                        pinchScale = dist/startDist;                    
                         
-                        console.log(pinchScale);
+                        if($(window).width() > imageObj.imageData.width*imageObj.ratio*touch.lastScale*pinchScale) {
+                            touch.lastScale = 1;
+                            zoomed = false;
+                            return;
+                        }
+                        
+                        var scale = touch.lastScale*pinchScale;                        
+                        that.scaleCanvas(canvas, imageObj, scale);
+                    } /* This is a start of implementing Panning while zoomed.  
+                        else if(zoomed) {
+                        move.X = pageX - start.X;
+                        move.Y = pageY - start.Y;
+                        draggable.offset({
+                            top: move.Y,
+                            left: move.X
+                        });
+                    }*/ else {                         
+                        move.X = pageX - start.X;
 
-                        ctx.save();
-                        ctx.translate(canvas.width / 2, canvas.height / 2);                        
-                        ctx.scale(imageObj.ratio*lastScale,imageObj.ratio*lastScale);
-
-                        ctx.scale(pinchScale,pinchScale);
-
-                        ctx.drawImage(imageObj.imageData, -imageObj.imageData.width / 2, -imageObj.imageData.height / 2);
-                        ctx.restore();
-                    } else if (event.type == 'vmousemove') { 
-                        moveX = event.pageX - startX;
-                        if (Math.abs(moveX) > s.moveLimit && draggable && !multiTouch) {
-                            tap = false;
+                        if (Math.abs(move.X) > s.moveLimit && draggable && !multiTouch) {
                             draggable.offset({
-                                left: moveX
+                                left: move.X
                             });
 
                             touch.nextPicObj.offset({
-                                left: moveX + s.windowWidth
+                                left: move.X + s.windowWidth
                             });
 
                             touch.prevPicObj.offset({
-                                left: moveX - s.windowWidth
+                                left: move.X - s.windowWidth
                             });
                         }
                     }
                 },
 
                 touchEnd: function (event) {
-                    var touch = Thesis.Gallery.touchEvents;
-                    if (event.type == 'touchend') {
-                        multiTouch = false
-                        lastScale = pinchScale;
-                    } else if (event.type == 'vmouseup') {
-                        if (tap) {
-                            touch.currentPicObj.parent().hide();
-                            touch.prevPicObj.parent().hide();
-                            touch.nextPicObj.parent().hide();
+                    event.preventDefault();
+                    event.stopPropagation();
 
-                            that.closeFullscreenView();
-                            s.inFullscreenMode = false;
-                            tap = false;
-                            lastScale = 1.0;
-                        } else if (touch.currentPicObj != null) {
+                    var touch = Thesis.Gallery.touchEvents;
+                    
+                    if (multiTouch) {
+                        multiTouch = false
+                        touch.lastScale = pinchScale;
+                    } else {
+                        if (touch.currentPicObj != null) {
                             var center = s.windowWidth / 2;
                             var offLeft = touch.currentPicObj.offset().left;
                             var offRight = touch.currentPicObj.offset().left + touch.currentPicObj.width();
@@ -476,6 +495,10 @@ Thesis.Gallery = (function() {
                         }
                         draggable = null;
                     }
+                },
+
+                transform: function (argument) {
+                    
                 }
             }
         })(),
