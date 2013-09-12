@@ -218,8 +218,9 @@ Thesis.Gallery = (function() {
                     Thesis.Gallery.loadGallery(fileList, s.step);
                 };
 
+                //Scan for new images every 10th second, if not currently viewing an image.
                 var galleryRefresh = function(fileList) {
-                    if (!that.inFullscreenMode) {
+                    if (s.inFullscreenMode) {
                         return;
                     }
                     var preLength = s.fileList.length;
@@ -592,6 +593,7 @@ Thesis.Gallery = (function() {
         closeFullscreenView: function() {
             $("#fullscreen").hide();
             $("#footer").hide();
+            s.inFullscreenMode = false;
         },
 
         resetFullscreenImageContainer: function(canvas, pos) {
