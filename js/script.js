@@ -402,7 +402,8 @@ Thesis.Gallery = (function() {
                         touch.lastScale = pinchScale;
                     } else {
                         if (touch.currentPicObj != null) {
-                            var center = s.windowWidth / 2;
+                            var windowWidth = $(window).width();
+                            var center = windowWidth / 2;
                             var offLeft = touch.currentPicObj.offset().left;
                             var offRight = touch.currentPicObj.offset().left + touch.currentPicObj.width();
                             var currentImageIndex = parseInt(touch.currentPicObj.find("canvas")[0].getAttribute("data-id"),10);
@@ -438,14 +439,14 @@ Thesis.Gallery = (function() {
                                         "left": 0
                                     }, "fast");
                                     touch.nextPicObj.animate({
-                                        "left": s.windowWidth
+                                        "left": windowWidth
                                     }, "fast");
                                 }
                             } else if (offLeft > center && offRight > s.windowWidth) {
                                 //slide out right                            
                                 if (currentImageIndex - 1 >= 0) {
                                     touch.currentPicObj.animate({
-                                        "left": s.windowWidth
+                                        "left": windowWidth
                                     }, "fast");
                                     touch.prevPicObj.animate({
                                         "left": 0
@@ -472,7 +473,7 @@ Thesis.Gallery = (function() {
                                         "left": 0
                                     }, "fast");
                                     touch.prevPicObj.animate({
-                                        "left": -s.windowWidth
+                                        "left": -windowWidth
                                     }, "fast");
                                 }
 
@@ -482,7 +483,7 @@ Thesis.Gallery = (function() {
                                     "left": 0
                                 }, "fast");
                                 touch.prevPicObj.animate({
-                                    "left": -s.windowWidth
+                                    "left": -windowWidth
                                 }, "fast");
                             } else if (offLeft < 0 && offRight > center) {
                                 //slide back from left
@@ -490,7 +491,7 @@ Thesis.Gallery = (function() {
                                     "left": 0
                                 }, "fast");
                                 touch.nextPicObj.animate({
-                                    "left": s.windowWidth
+                                    "left": windowWidth
                                 }, "fast");
                             }
                         }
@@ -548,6 +549,7 @@ Thesis.Gallery = (function() {
 
             $("#content").on("click", "canvas", function(event) {
                 var srcCanvas1 = $(this)[0];
+                var windowWidth = $(window).width();
                 var currentCanvas = document.getElementById("fullscreen-img");
                 var nextCanvas = document.getElementById("fullscreen-img2");
                 var prevCanvas = document.getElementById("fullscreen-img3");
@@ -559,10 +561,10 @@ Thesis.Gallery = (function() {
                 that.touchEvents.currentPicObj = that.resetFullscreenImageContainer(currentCanvas, 0);
 
                 nextCanvas.getContext("2d").reset();
-                that.touchEvents.nextPicObj = that.resetFullscreenImageContainer(nextCanvas, s.windowWidth);
+                that.touchEvents.nextPicObj = that.resetFullscreenImageContainer(nextCanvas, windowWidth);
 
                 prevCanvas.getContext("2d").reset();
-                that.touchEvents.prevPicObj = that.resetFullscreenImageContainer(prevCanvas, -s.windowWidth);
+                that.touchEvents.prevPicObj = that.resetFullscreenImageContainer(prevCanvas, -windowWidth);
 
                 //Load next image
                 if (imageIndex + 1 <= s.fileList.length - 1) {
@@ -599,11 +601,51 @@ Thesis.Gallery = (function() {
         resetFullscreenImageContainer: function(canvas, pos) {
             var imageContainer = $(canvas).parent();
             imageContainer.offset({
+                top: 0,
                 left: pos
             });
 
             imageContainer.css("position", "fixed");
             return imageContainer;
+        },
+
+        reloadPicture: function (argument) {
+            var windowWidth = $(window).width();
+            var currentCanvas = document.getElementById("fullscreen-img");
+            var nextCanvas = document.getElementById("fullscreen-img2");
+            var prevCanvas = document.getElementById("fullscreen-img3");
+            var imageIndex = parseInt(srcCanvas1.getAttribute("data-id"),10);
+
+            that.touchEvents.lastScale = 1;
+
+            currentCanvas.getContext("2d").reset();
+            that.touchEvents.currentPicObj = that.resetFullscreenImageContainer(currentCanvas, 0);
+
+            nextCanvas.getContext("2d").reset();
+            that.touchEvents.nextPicObj = that.resetFullscreenImageContainer(nextCanvas, windowWidth);
+
+            prevCanvas.getContext("2d").reset();
+            that.touchEvents.prevPicObj = that.resetFullscreenImageContainer(prevCanvas, -windowWidth);
+
+            //Load next image
+            if (imageIndex + 1 <= s.fileList.length - 1) {
+                that.loadPicture(nextCanvas, (imageIndex + 1));
+            }
+
+            //Load previous image
+            if (imageIndex - 1 >= 0) {
+                that.loadPicture(prevCanvas, (imageIndex - 1));
+            }
+
+            that.loadPicture(currentCanvas, imageIndex, Thesis.Messure);
+
+            $("#fullscreen").show();
+            $("#footer").offset({
+                bottom: 0
+            });
+            $("#footer").css("position", "fixed");
+            $("#footer").show();
+
         },
 
         loadPicture: function(trgCanvas, imageIndex, callback) {
