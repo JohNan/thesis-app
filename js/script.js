@@ -644,6 +644,7 @@ Thesis.Gallery = (function() {
                 trgCanvas.width = maxWidth;
                 trgCanvas.height = maxHeight;
 
+                s.fullscreenImg[trgCanvas.id].name = s.fileList[imageIndex].name;
                 s.fullscreenImg[trgCanvas.id].rotation = Math.PI / 180;
                 s.fullscreenImg[trgCanvas.id].ratio = ratio;
                 s.fullscreenImg[trgCanvas.id].scale = 1;
@@ -719,7 +720,7 @@ Thesis.Gallery = (function() {
 
         invertCanvas: function(canvas, imageObj) {
             Thesis.Messure.start("invert-image-" + imageObj.name);
-            var ctx = canvas.getContext("2d");
+            var ctx = canvas.getContext("2d").reset();
             var ratio = that.getRatio(imageObj.imageData);
             var rotation = imageObj.rotation;
             var scale = imageObj.scale;
@@ -796,9 +797,8 @@ Thesis.Gallery = (function() {
 
                         ctx[n].drawImage(imageObj[n], sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
                         total++;
-
                         //Need to wait untill al images have been loaded before stopping the
-                        if(total == max && !insertOnTop) {
+                        if((total == max || total == images.length) && !insertOnTop) {
                             Thesis.Messure.stop("load-gallery");
                         }
                     }
