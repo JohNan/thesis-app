@@ -110,7 +110,7 @@ Thesis.Gallery = (function() {
 
             s.maxWidth = Math.floor(( $(document).innerWidth() / 3));
             
-            if(Thesis.Settings.isDesktop()) {
+            if(Thesis.Settings.isDesktop() || Thesis.Settings.isPhoneGap()) {
                 s.maxWidth = Math.floor(( $(document).innerWidth() / 3) - 15);
             }
 
