@@ -960,7 +960,7 @@ Thesis.Firefox = (function() {
                 }
             }
 
-
+            $("#backbutton").hide();
             console.log("<-- Firefox init done -->");
         },
 
@@ -977,12 +977,26 @@ Thesis.Firefox = (function() {
                     alert("Couldn't install (" + errObj.code + ") " + errObj.message);
                 }
             });
+
+            $("#backbutton").click(function() {
+                if (Thesis.Gallery.settings.inFullscreenMode) {
+                    Thesis.Gallery.closeFullscreenView();
+                }
+                $(this).hide();
+            });
         },
 
         listDirectory: function(path, suffix, callback) {
             var pics = navigator.getDeviceStorage(path);
-            var cursor = pics.enumerate();
             var dirs = [];
+            if(pics == null) {
+                callback(dirs);
+                Thesis.Settings.device.firefox = false;
+                Thesis.Settings.device.desktop = true;
+                return;                
+            }
+
+            var cursor = pics.enumerate();            
             var allowedFileTypes = ["image/png", "image/jpeg", "image/gif"];
             var state;
 
