@@ -750,62 +750,71 @@ Thesis.Gallery = (function() {
             if (s.fileList.length == 0) {
                 s.fileList = images;
             }
+        
+            if (images.length < min) {
+                return;
+            }            
+            
+            for (var i = min; i < images.length && i < max; i++) {
+                canvas[i] = document.createElement("canvas");
+                canvas[i].className = "thumb";
+                canvas[i].setAttribute("data-id", i);
 
-            if (images.length >= min) {
-                for (var i = min; i < images.length && i < max; i++) {
-                    canvas[i] = document.createElement("canvas");
-                    canvas[i].className = "thumb";
-                    canvas[i].setAttribute("data-id", i);
+                ctx[i] = canvas[i].getContext("2d");
 
-                    ctx[i] = canvas[i].getContext("2d");
+                imageObj[i] = new Image();
 
-                    imageObj[i] = new Image();
+                imageObj[i].onload = (function(n) {
+                    return function() {
+                        canvas[n].width = s.maxWidth;
+                        canvas[n].height = s.maxHeight;
 
-                    imageObj[i].onload = (function(n) {
-                        return function() {
-                            canvas[n].width = s.maxWidth;
-                            canvas[n].height = s.maxHeight;
-
-                            var sourceX = 0;
-                            var sourceY = 0;
-                            var destX = 0;
-                            var destY = 0;
-                            
-                            var stretchRatio = (imageObj[n].height / canvas[n].height);
-                            var sourceWidth = Math.floor(canvas[n].width * stretchRatio);
-                            var sourceHeight = Math.floor(imageObj[n].height);
-                            
-                            // http://zsprawl.com/iOS/2012/03/cropping-scaling-images-with-canvas-html5/
-                            if (imageObj[n].height > imageObj[n].width) {                                
-                                stretchRatio = (imageObj[n].width / canvas[n].width);
-                                sourceWidth = Math.floor(imageObj[n].width);
-                                sourceHeight = Math.floor(canvas[n].height * stretchRatio);                                
-                            }
-                            var destWidth = Math.floor(canvas[n].width);
-                            var destHeight = Math.floor(canvas[n].height);
-                            
-                            ctx[n].drawImage(imageObj[n], sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
-                            total++;
-                            //Need to wait untill al images have been loaded before stopping the
-                            if(total == max && !insertOnTop) {
-                                Thesis.Messure.stop("load-gallery");
-                            }
+                        var sourceX = 0;
+                        var sourceY = 0;
+                        var destX = 0;
+                        var destY = 0;
+                        
+                        var stretchRatio = (imageObj[n].height / canvas[n].height);
+                        var sourceWidth = Math.floor(canvas[n].width * stretchRatio);
+                        var sourceHeight = Math.floor(imageObj[n].height);
+                        
+                        // http://zsprawl.com/iOS/2012/03/cropping-scaling-images-with-canvas-html5/
+                        if (imageObj[n].height > imageObj[n].width) {                                
+                            stretchRatio = (imageObj[n].width / canvas[n].width);
+                            sourceWidth = Math.floor(imageObj[n].width);
+                            sourceHeight = Math.floor(canvas[n].height * stretchRatio);                                
                         }
-                    }(i));
-                    imageObj[i].src = images[i].fullPath;
+                        var destWidth = Math.floor(canvas[n].width);
+                        var destHeight = Math.floor(canvas[n].height);
+                        
+                       /* console.log("id: " + n + " : " + sourceX + " : " + sourceY + " : " + sourceWidth + " : " + sourceHeight
+                                + " : " + destX + " : " + destY
+                                + " : " + destWidth + " : " + destHeight
+                            );*/
 
-                    if (insertOnTop) {
-                        var parentElement = document.getElementById('content');
-                        var theFirstChild = parentElement.firstChild;
-                        parentElement.insertBefore(canvas[i], theFirstChild);
-                        console.log(parentElement);
-                    } else {
-                        document.getElementById('content').appendChild(canvas[i]);
+                        ctx[n].drawImage(imageObj[n], sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
+                        total++;
+
+                        //Need to wait untill al images have been loaded before stopping the
+                        if(total == max && !insertOnTop) {
+                            Thesis.Messure.stop("load-gallery");
+                        }
                     }
+                }(i));
+                imageObj[i].src = images[i].fullPath;
+
+                if (insertOnTop) {
+                    var parentElement = document.getElementById('content');
+                    var theFirstChild = parentElement.firstChild;
+                    parentElement.insertBefore(canvas[i], theFirstChild);
+                    console.log(parentElement);
+                } else {
+                    document.getElementById('content').appendChild(canvas[i]);
                 }
             }
+        
 
-            s.min += step;
+            s.min = s.max;
             s.max += step;
             
         },
@@ -843,7 +852,7 @@ Thesis.PhoneGap = (function() {
                 if (Thesis.Gallery.settings.inFullscreenMode) {
                     Thesis.Gallery.closeFullscreenView();
                 } else {
-                    tizen.application.getCurrentApplication().exit();
+                    navigator.app.exitApp();
                 }
             }, false);
 
@@ -934,7 +943,7 @@ Thesis.Firefox = (function() {
 
             s = this.settings;
             this.bindUIActions();
-
+            
             var request = navigator.mozApps.getSelf();
 
             request.onsuccess = function() {
