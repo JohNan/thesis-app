@@ -552,6 +552,8 @@ Thesis.Gallery = (function() {
                 var prevCanvas = document.getElementById("fullscreen-img3");
                 var imageIndex = parseInt(srcCanvas1.getAttribute("data-id"),10);
 
+                that.touchEvents.lastScale = 1;
+
                 currentCanvas.getContext("2d").reset();
                 that.touchEvents.currentPicObj = that.resetFullscreenImageContainer(currentCanvas, 0);
 
@@ -581,47 +583,12 @@ Thesis.Gallery = (function() {
                 $("#footer").show();
 
                 s.inFullscreenMode = true;
+                if(Thesis.Settings.isFireFox()) {
+                    $("#backbutton").show();
+                }
             });
         },
-        scaleImage: function (canvas, imageObj, event) {
-            var ctx = canvas.getContext("2d").reset();
-            
-            var startXa = 326;
-            var startYa = 102;
-
-            var startXb = 90;
-            var startYb = 466;
-
-            var endXa = 236;
-            var endYa = 255;
-
-            var endXb = 142;
-            var endYb = 360;
-
-            var dista = Math.sqrt((startXb-startXa)*(startXb-startXa) + (startYb-startYa)*(startYb-startYa));
-            var distb = Math.sqrt((endXb-endXa)*(endXb-endXa) + (endYb-endXa)*(endYb-endXa));  
-
-            var dist = distb/dista;
-
-            if(!lastDist) {
-                lastDist = dist;
-            }
-
-            var scale = currentZoom * dist;
-
-            console.log(scale);
-
-            currentZoom *= scale;
-            lastDist = dist;
-            
-
-            ctx.save();
-            ctx.translate(canvas.width / 2, canvas.height / 2);
-            ctx.scale(scale,scale);
-            ctx.drawImage(imageObj.imageData, -imageObj.imageData.width / 2, -imageObj.imageData.height / 2);
-            ctx.restore();
-        },
-
+        
         closeFullscreenView: function() {
             $("#fullscreen").hide();
             $("#footer").hide();
@@ -675,11 +642,14 @@ Thesis.Gallery = (function() {
                 trgCanvas.width = maxWidth;
                 trgCanvas.height = maxHeight;
 
+                s.fullscreenImg[trgCanvas.id].rotation = Math.PI / 180;
                 s.fullscreenImg[trgCanvas.id].ratio = ratio;
+                s.fullscreenImg[trgCanvas.id].scale = 1;
                 s.fullscreenImg[trgCanvas.id].maxWidth = maxWidth;
                 s.fullscreenImg[trgCanvas.id].maxHeight = maxHeight;
                 s.fullscreenImg[trgCanvas.id].width = sourceWidth;
                 s.fullscreenImg[trgCanvas.id].height = sourceHeight;
+
                 ctx.save();
                 ctx.translate(trgCanvas.width / 2, trgCanvas.height / 2);
                 //ctx.translate(image.width / 2, image.height / 2);
@@ -711,21 +681,51 @@ Thesis.Gallery = (function() {
             return ratio;
         },
 
-        rotateCanvas: function(canvas, imageObj, degrees) {
+        scaleCanvas: function (canvas, imageObj, scale) {
             var ctx = canvas.getContext("2d").reset();
             var ratio = that.getRatio(imageObj.imageData);
-            
+
             ctx.save();
-            ctx.translate(canvas.width / 2, canvas.height / 2);
-            ctx.scale(ratio,ratio);
-            ctx.rotate(degrees * Math.PI / 180);
+            ctx.translate(canvas.width / 2, canvas.height / 2);                        
+            ctx.rotate(imageObj.rotation);                        
+            ctx.scale(scale*ratio, scale*ratio);
             ctx.drawImage(imageObj.imageData, -imageObj.imageData.width / 2, -imageObj.imageData.height / 2);
             ctx.restore();
+
+            //Save the scale
+            imageObj.scale = scale;
+        },
+
+        rotateCanvas: function(canvas, imageObj, degrees) {
+            Thesis.Messure.start("rotate-image-" + imageObj.name);
+            var ctx = canvas.getContext("2d").reset();
+            var ratio = that.getRatio(imageObj.imageData);
+            var rotation = degrees * Math.PI / 180;            
+            var scale = imageObj.scale;
+
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(rotation);
+            ctx.scale(scale*ratio,scale*ratio);       
+            ctx.drawImage(imageObj.imageData, -imageObj.imageData.width / 2, -imageObj.imageData.height / 2);
+            ctx.restore();
+
+            //Save the rotation
+            imageObj.rotation = rotation;
+            Thesis.Messure.stop("rotate-image-" + imageObj.name);
         },
 
         invertCanvas: function(canvas, imageObj) {
             Thesis.Messure.start("invert-image-" + imageObj.name);
             var ctx = canvas.getContext("2d");
+            var ratio = that.getRatio(imageObj.imageData);
+            var rotation = imageObj.rotation;
+            var scale = imageObj.scale;
+
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(rotation);
+            ctx.scale(scale*ratio,scale*ratio)         
             var imgData = ctx.getImageData((canvas.width / 2) - ((imageObj.width - 1) / 2), (canvas.height / 2) - (imageObj.height / 2), imageObj.width, imageObj.height);
             // invert colors
             for (var i = 0; i < imgData.data.length; i += 4) {
@@ -735,6 +735,7 @@ Thesis.Gallery = (function() {
                 imgData.data[i + 3] = 255;
             }
             ctx.putImageData(imgData, (canvas.width / 2) - ((imageObj.width - 1) / 2), (canvas.height / 2) - (imageObj.height / 2));
+            ctx.restore();
             Thesis.Messure.stop("invert-image-" + imageObj.name);
         },
 
