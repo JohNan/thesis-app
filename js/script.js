@@ -111,7 +111,7 @@ Thesis.Gallery = (function() {
             s.maxWidth = Math.floor(( $(document).innerWidth() / 3));
             
             if(Thesis.Settings.isDesktop()) {
-                s.maxWidth = Math.floor(( $(document).innerWidth() / 3) - 25);
+                s.maxWidth = Math.floor(( $(document).innerWidth() / 3) - 15);
             }
 
             
