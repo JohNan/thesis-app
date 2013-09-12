@@ -1079,8 +1079,7 @@ Thesis.Tizen = (function() {
             var documentsDir;
             var dirs = [];
             var onsuccess = function(files) {
-                for (var i = 0; i < files.length; i++) {
-
+                for (var i = 0; i < files.length; i++) {                    
                     var dir = {
                         name: files[i].name,
                         fullPath: files[i].toURI()
