@@ -24,7 +24,7 @@ figure, canvas {
 	/*border: 1px solid white;*/
 }
 canvas {
-	margin: 6px;
+	border: 1px solid black;
 /*	-webkit-margin-before: 1em;
 	-webkit-margin-after: 1em;
 	-webkit-margin-start: 40px;
