@@ -77,14 +77,14 @@ Thesis.Gallery = (function() {
         settings: {
             obj: null,
             moveLimit: 30,
-            imageMargin: 6,
+            imageMargin: 1,
             headerHeight: 60,
             footerHeight: 60,
             maxWidth: 0,
             maxHeight: 0,
             min: 0,
-            max: 10,
-            step: 10,
+            max: 20,
+            step: 20,
             fileList: [],
             fullscreenImg: [],
             pictureDir: "",
@@ -102,13 +102,21 @@ Thesis.Gallery = (function() {
 
             s = this.settings;
             that = this;
-            Thesis.Messure.start("load-gallery");
+            Thesis.Messure.start("load-gallery");            
 
-            s.maxWidth = Math.floor(($(document).innerWidth() / 2) - (s.imageMargin * 4) - 15);
-            s.maxHeight = Math.floor((($(document).innerWidth() / 2) - (s.imageMargin * 4) - 15) * 0.8);
             s.windowWidth = $(window).width();
             s.footerHeight = $("#footer").height();
             s.headerHeight = $("#header").height();
+
+            s.maxWidth = Math.floor(( $(document).innerWidth() / 3));
+            
+            if(Thesis.Settings.isDesktop()) {
+                s.maxWidth = Math.floor(( $(document).innerWidth() / 3) - 25);
+            }
+
+            
+            s.maxHeight = s.maxWidth * 0.8 - (s.imageMargin * 4);
+            s.maxWidth -= (s.imageMargin * 4);
 
             if (Thesis.Settings.isPhoneGap()) {
                 this.listDirectory = Thesis.PhoneGap.listDirectory;
@@ -207,7 +215,7 @@ Thesis.Gallery = (function() {
             } else {
                 var printDirPath = function(fileList) {
                     Thesis.Gallery.bindUIActions(fileList);
-                    Thesis.Gallery.loadGallery(fileList, 10);
+                    Thesis.Gallery.loadGallery(fileList, s.step);
                 };
 
                 var galleryRefresh = function(fileList) {
