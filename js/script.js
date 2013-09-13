@@ -402,7 +402,8 @@ Thesis.Gallery = (function() {
                         touch.lastScale = pinchScale;
                     } else {
                         if (touch.currentPicObj != null) {
-                            var center = s.windowWidth / 2;
+                            var windowWidth = $(window).width();
+                            var center = windowWidth / 2;
                             var offLeft = touch.currentPicObj.offset().left;
                             var offRight = touch.currentPicObj.offset().left + touch.currentPicObj.width();
                             var currentImageIndex = parseInt(touch.currentPicObj.find("canvas")[0].getAttribute("data-id"),10);
@@ -438,14 +439,14 @@ Thesis.Gallery = (function() {
                                         "left": 0
                                     }, "fast");
                                     touch.nextPicObj.animate({
-                                        "left": s.windowWidth
+                                        "left": windowWidth
                                     }, "fast");
                                 }
                             } else if (offLeft > center && offRight > s.windowWidth) {
                                 //slide out right                            
                                 if (currentImageIndex - 1 >= 0) {
                                     touch.currentPicObj.animate({
-                                        "left": s.windowWidth
+                                        "left": windowWidth
                                     }, "fast");
                                     touch.prevPicObj.animate({
                                         "left": 0
@@ -472,7 +473,7 @@ Thesis.Gallery = (function() {
                                         "left": 0
                                     }, "fast");
                                     touch.prevPicObj.animate({
-                                        "left": -s.windowWidth
+                                        "left": -windowWidth
                                     }, "fast");
                                 }
 
@@ -482,7 +483,7 @@ Thesis.Gallery = (function() {
                                     "left": 0
                                 }, "fast");
                                 touch.prevPicObj.animate({
-                                    "left": -s.windowWidth
+                                    "left": -windowWidth
                                 }, "fast");
                             } else if (offLeft < 0 && offRight > center) {
                                 //slide back from left
@@ -490,7 +491,7 @@ Thesis.Gallery = (function() {
                                     "left": 0
                                 }, "fast");
                                 touch.nextPicObj.animate({
-                                    "left": s.windowWidth
+                                    "left": windowWidth
                                 }, "fast");
                             }
                         }
@@ -548,6 +549,7 @@ Thesis.Gallery = (function() {
 
             $("#content").on("click", "canvas", function(event) {
                 var srcCanvas1 = $(this)[0];
+                var windowWidth = $(window).width();
                 var currentCanvas = document.getElementById("fullscreen-img");
                 var nextCanvas = document.getElementById("fullscreen-img2");
                 var prevCanvas = document.getElementById("fullscreen-img3");
@@ -559,10 +561,10 @@ Thesis.Gallery = (function() {
                 that.touchEvents.currentPicObj = that.resetFullscreenImageContainer(currentCanvas, 0);
 
                 nextCanvas.getContext("2d").reset();
-                that.touchEvents.nextPicObj = that.resetFullscreenImageContainer(nextCanvas, s.windowWidth);
+                that.touchEvents.nextPicObj = that.resetFullscreenImageContainer(nextCanvas, windowWidth);
 
                 prevCanvas.getContext("2d").reset();
-                that.touchEvents.prevPicObj = that.resetFullscreenImageContainer(prevCanvas, -s.windowWidth);
+                that.touchEvents.prevPicObj = that.resetFullscreenImageContainer(prevCanvas, -windowWidth);
 
                 //Load next image
                 if (imageIndex + 1 <= s.fileList.length - 1) {
@@ -599,11 +601,51 @@ Thesis.Gallery = (function() {
         resetFullscreenImageContainer: function(canvas, pos) {
             var imageContainer = $(canvas).parent();
             imageContainer.offset({
+                top: 0,
                 left: pos
             });
 
             imageContainer.css("position", "fixed");
             return imageContainer;
+        },
+
+        reloadPicture: function (argument) {
+            var windowWidth = $(window).width();
+            var currentCanvas = document.getElementById("fullscreen-img");
+            var nextCanvas = document.getElementById("fullscreen-img2");
+            var prevCanvas = document.getElementById("fullscreen-img3");
+            var imageIndex = parseInt(srcCanvas1.getAttribute("data-id"),10);
+
+            that.touchEvents.lastScale = 1;
+
+            currentCanvas.getContext("2d").reset();
+            that.touchEvents.currentPicObj = that.resetFullscreenImageContainer(currentCanvas, 0);
+
+            nextCanvas.getContext("2d").reset();
+            that.touchEvents.nextPicObj = that.resetFullscreenImageContainer(nextCanvas, windowWidth);
+
+            prevCanvas.getContext("2d").reset();
+            that.touchEvents.prevPicObj = that.resetFullscreenImageContainer(prevCanvas, -windowWidth);
+
+            //Load next image
+            if (imageIndex + 1 <= s.fileList.length - 1) {
+                that.loadPicture(nextCanvas, (imageIndex + 1));
+            }
+
+            //Load previous image
+            if (imageIndex - 1 >= 0) {
+                that.loadPicture(prevCanvas, (imageIndex - 1));
+            }
+
+            that.loadPicture(currentCanvas, imageIndex, Thesis.Messure);
+
+            $("#fullscreen").show();
+            $("#footer").offset({
+                bottom: 0
+            });
+            $("#footer").css("position", "fixed");
+            $("#footer").show();
+
         },
 
         loadPicture: function(trgCanvas, imageIndex, callback) {
@@ -867,14 +909,24 @@ Thesis.PhoneGap = (function() {
                 return;
             }
 
-            var dirs = path.split("/").reverse();
+            var dirs = path.split("/").reverse();            
+
+            var subdirs = [];
             var root = rootDir;
+            var images = [];
 
             var getDir = function(dir) {
                 root.getDirectory(dir, {
                     create: false,
                     exclusive: false
                 }, successGet, failGet);
+            };
+
+            var getSubDir = function(dir) {
+                dir.root.getDirectory(dir.subdir, {
+                    create: false,
+                    exclusive: false
+                }, successGetSub, failGet);
             };
 
             var successGet = function(entry) {
@@ -887,25 +939,41 @@ Thesis.PhoneGap = (function() {
                 }
             };
 
+            var successGetSub = function(entry) {
+                var directoryReader = entry.createReader();
+                directoryReader.readEntries(successList, failList);
+            };
+
             var failGet = function() {
                 console.log("failed to get dir " + dir);
             };
 
             var successList = function(entries) {
-                var i;
-                var dirs = [];
-
-                for (i = entries.length - 1; i >= 0; i--) {
-                    if (entries[i].name.endsWith(suffix)) {
+                var i; 
+                for (i = 0; i < entries.length; i++) {
+                    if(entries[i].isDirectory) {
+                        var parentDir = root;
+                        entries[i].getParent(function (parent) {parentDir = parent;}, function (error) {});
                         var dir = {
+                            root: parentDir,
+                            subdir: entries[i].name
+                        }
+                        subdirs.push(dir);  
+                    } else if (entries[i].name.endsWith(suffix)) {
+                        var image = {
                             name: entries[i].name,
                             fullPath: entries[i].fullPath
                         }
 
-                        dirs.push(dir);
+                        images.push(image);
                     }
                 }
-                callback(dirs);
+
+                if(dirs.length == 0 && subdirs.length == 0) {
+                    callback(images);
+                } else if(subdirs.length > 0){
+                    getSubDir(subdirs.pop());
+                }
             }
 
             var failList = function(error) {
@@ -962,7 +1030,27 @@ Thesis.Firefox = (function() {
                 }
             }
 
+            function functionToCallOnorientationChange() {
+                var orientation = screen.mozOrientation;
+                if (Thesis.Gallery.settings.inFullscreenMode) {
+                    Thesis.Gallery.reloadPicture();
+                }
+                if (orientation === "portrait-primary" || orientation === "portrait-secondary" ) {
+                    //do something
+                } else if (orientation === "landscape-primary" || orientation === "landscape-secondary" ) {
+                    //do something else
+                }
+            }
+             
+            window.screen.onmozorientationchange = functionToCallOnorientationChange;
+
             $("#backbutton").hide();
+            screen.addEventListener("orientationchange", function () {
+                if (Thesis.Gallery.settings.inFullscreenMode) {
+                    Thesis.Gallery.reloadPicture();
+                }
+                console.log("The orientation of the screen is: " + screen.orientation);
+            });
             console.log("<-- Firefox init done -->");
         },
 
@@ -1025,6 +1113,16 @@ Thesis.Firefox = (function() {
             }
         },
 
+        handleOrientation: function(event) {
+          var absolute = event.absolute;
+          var alpha    = event.alpha;
+          var beta     = event.beta;
+          var gamma    = event.gamma;
+
+          // Do stuff with the new orientation data
+          console.log(gamma);
+        },
+
         drawBall: function() {
             context.clearRect(0, 0, 300, 300);
             context.beginPath();
@@ -1082,6 +1180,7 @@ Thesis.Tizen = (function() {
             var dirs = [];
             var onsuccess = function(files) {
                 for (var i = 0; i < files.length; i++) {                    
+                    console.log(files[i].fullPath);
                     var dir = {
                         name: files[i].name,
                         fullPath: files[i].toURI()
