@@ -315,7 +315,7 @@ Thesis.Gallery = (function() {
                         var scale = touch.lastScale; 
                         that.scaleCanvas(canvas, imageObj, scale);
                         zoomed = true;                        
-                    } else {       
+                    } else {                        
                         move = {
                             X: 0,
                             Y: 0
@@ -328,6 +328,8 @@ Thesis.Gallery = (function() {
                         draggable = $(event.currentTarget);
                         touch.currentPicObj = $(event.currentTarget);
                         
+                        Thesis.Messure.start("swipe-image");
+
                         touch.nextPicObj.show();
                         touch.prevPicObj.show();
                     }
@@ -411,12 +413,13 @@ Thesis.Gallery = (function() {
                             if (offRight < center && offLeft < 0) {
                                 //slide out left
                                 if (s.fileList.length > currentImageIndex + 1) {
-                                    touch.currentPicObj.animate({
+                                    touch.slide({
+                                        "imgObj": touch.currentPicObj,
                                         "left": -touch.currentPicObj.width()
-                                    }, "fast");
-                                    touch.nextPicObj.animate({
+                                    }, {
+                                        "imgObj": touch.nextPicObj,
                                         "left": 0
-                                    }, "fast");
+                                    });                                    
 
                                     tmp = touch.currentPicObj;
                                     touch.currentPicObj = touch.nextPicObj;
@@ -435,22 +438,24 @@ Thesis.Gallery = (function() {
                                         touch.nextPicObj.find("canvas")[0].getContext("2d").reset();
                                     }
                                 } else {
-                                    touch.currentPicObj.animate({
+                                    touch.slide({
+                                        "imgObj": touch.currentPicObj,
                                         "left": 0
-                                    }, "fast");
-                                    touch.nextPicObj.animate({
+                                    }, {
+                                        "imgObj": touch.nextPicObj,
                                         "left": windowWidth
-                                    }, "fast");
+                                    });
                                 }
                             } else if (offLeft > center && offRight > s.windowWidth) {
                                 //slide out right                            
                                 if (currentImageIndex - 1 >= 0) {
-                                    touch.currentPicObj.animate({
+                                    touch.slide({
+                                        "imgObj": touch.currentPicObj,
                                         "left": windowWidth
-                                    }, "fast");
-                                    touch.prevPicObj.animate({
+                                    }, {
+                                        "imgObj": touch.prevPicObj,
                                         "left": 0
-                                    }, "fast");
+                                    });
 
                                     tmp = touch.currentPicObj;
                                     touch.currentPicObj = touch.prevPicObj;
@@ -469,38 +474,61 @@ Thesis.Gallery = (function() {
                                         touch.prevPicObj.find("canvas")[0].getContext("2d").reset();
                                     }
                                 } else {
-                                    touch.currentPicObj.animate({
+                                    touch.slide({
+                                        "imgObj": touch.currentPicObj,
                                         "left": 0
-                                    }, "fast");
-                                    touch.prevPicObj.animate({
+                                    }, {
+                                        "imgObj": touch.prevPicObj,
                                         "left": -windowWidth
-                                    }, "fast");
+                                    });
                                 }
 
                             } else if (offLeft < center && offRight > s.windowWidth) {
                                 //slide back from right
-                                touch.currentPicObj.animate({
+                                touch.slide({
+                                    "imgObj": touch.currentPicObj,
                                     "left": 0
-                                }, "fast");
-                                touch.prevPicObj.animate({
+                                }, {
+                                    "imgObj": touch.prevPicObj,
                                     "left": -windowWidth
-                                }, "fast");
+                                });                                
                             } else if (offLeft < 0 && offRight > center) {
                                 //slide back from left
-                                touch.currentPicObj.animate({
+                                touch.slide({
+                                    "imgObj": touch.currentPicObj,
                                     "left": 0
-                                }, "fast");
-                                touch.nextPicObj.animate({
+                                }, {
+                                    "imgObj": touch.nextPicObj,
                                     "left": windowWidth
-                                }, "fast");
+                                });
                             }
                         }
+
                         draggable = null;
                     }
                 },
 
-                transform: function (argument) {
-                    
+                slide: function (obj1, obj2) {
+                    var n = 0;
+                    obj1.imgObj.animate({
+                        "left": obj1.left
+                    }, "fast", function () {
+                        n++;
+
+                        if(n == 2) {
+                            Thesis.Messure.stop("swipe-image");
+                        }           
+                    });
+
+                    obj2.imgObj.animate({
+                        "left": obj2.left
+                    }, "fast", function () {
+                        n++;
+
+                        if(n == 2) {
+                            Thesis.Messure.stop("swipe-image");
+                        }           
+                    });                    
                 }
             }
         })(),
@@ -1260,6 +1288,7 @@ Thesis.Messure = (function() {
                 console.log(name + ": " + time + "ms");
                 s.clocks[name].result = time;
                 s.clocks[name].timeStart = 0;
+                s.clocks[name].points = 0;
                 if (Thesis.Settings.isDebug()) {
                     console.log("Messure clock: '" + name + "' stopped at " + s.clocks[name].timeEnd);
                 }
