@@ -218,13 +218,11 @@ Thesis.Gallery = (function() {
                     /* Sort the list in javascript. Needed since the directory listing on the devices
                         use different orders.
                     */
-                    console.log(fileList);
                     fileList.sort(function (a, b) {
                         a = a.name.replace(/^.*\/|\.[^.]*$/g, '');
                         b = b.name.replace(/^.*\/|\.[^.]*$/g, '');
                         return (a > b ? 1 : -1);
                     });
-                    console.log(fileList);
                     Thesis.Gallery.loadGallery(fileList, s.step);
                 };
 
@@ -238,11 +236,9 @@ Thesis.Gallery = (function() {
                     console.log("Refresh: " + fileList.length + " - " + s.fileList.length);
 
                     var diffArr = fileList.diff(s.fileList, 'name');
-                    console.log(diffArr.length);
                     if (diffArr.length > 0) {
                         console.log((fileList.length - s.fileList.length - 1));
                         for (var i = diffArr.length - 1; i >= 0; i--) {
-                            console.log(diffArr[i].name);
                             s.fileList.unshift(diffArr[i]);
                         }
 
@@ -562,7 +558,6 @@ Thesis.Gallery = (function() {
             fullscreenContainers.bind("vmousemove touchmove", that.touchEvents.touchMove);
 
             $("#rotate-left").on("click", function(event) {
-                console.log("Rotate left.");
                 var canvas = that.touchEvents.currentPicObj.find("canvas")[0];
                 var imageObj = s.fullscreenImg[canvas.id];
 
@@ -570,7 +565,6 @@ Thesis.Gallery = (function() {
             });
 
             $("#rotate-right").on("click", function(event) {
-                console.log("Rotate right.");
                 var canvas = that.touchEvents.currentPicObj.find("canvas")[0];
                 var imageObj = s.fullscreenImg[canvas.id];
 
@@ -578,7 +572,6 @@ Thesis.Gallery = (function() {
             });
 
             $("#invert").on("click", function(event) {
-                console.log("Invert.");
                 var canvas = that.touchEvents.currentPicObj.find("canvas")[0];
                 var imageObj = s.fullscreenImg[canvas.id];
 
