@@ -215,6 +215,16 @@ Thesis.Gallery = (function() {
             } else {
                 var printDirPath = function(fileList) {
                     Thesis.Gallery.bindUIActions(fileList);
+                    /* Sort the list in javascript. Needed since the directory listing on the devices
+                        use different orders.
+                    */
+                    console.log(fileList);
+                    fileList.sort(function (a, b) {
+                        a = a.name.replace(/^.*\/|\.[^.]*$/g, '');
+                        b = b.name.replace(/^.*\/|\.[^.]*$/g, '');
+                        return (a > b ? 1 : -1);
+                    });
+                    console.log(fileList);
                     Thesis.Gallery.loadGallery(fileList, s.step);
                 };
 
