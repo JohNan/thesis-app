@@ -215,6 +215,16 @@ Thesis.Gallery = (function() {
             } else {
                 var printDirPath = function(fileList) {
                     Thesis.Gallery.bindUIActions(fileList);
+                    /* Sort the list in javascript. Needed since the directory listing on the devices
+                        use different orders.
+                    */
+                    console.log(fileList);
+                    fileList.sort(function (a, b) {
+                        a = a.name.replace(/^.*\/|\.[^.]*$/g, '');
+                        b = b.name.replace(/^.*\/|\.[^.]*$/g, '');
+                        return (a > b ? 1 : -1);
+                    });
+                    console.log(fileList);
                     Thesis.Gallery.loadGallery(fileList, s.step);
                 };
 
@@ -788,7 +798,7 @@ Thesis.Gallery = (function() {
 
         invertCanvas: function(canvas, imageObj) {
             Thesis.Messure.start("invert-image-" + imageObj.name);
-            var ctx = canvas.getContext("2d").reset();
+            var ctx = canvas.getContext("2d");
             var ratio = that.getRatio(imageObj.imageData);
             var rotation = imageObj.rotation;
             var scale = imageObj.scale;
