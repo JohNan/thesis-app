@@ -218,13 +218,11 @@ Thesis.Gallery = (function() {
                     /* Sort the list in javascript. Needed since the directory listing on the devices
                         use different orders.
                     */
-                    console.log(fileList);
                     fileList.sort(function (a, b) {
                         a = a.name.replace(/^.*\/|\.[^.]*$/g, '');
                         b = b.name.replace(/^.*\/|\.[^.]*$/g, '');
                         return (a > b ? 1 : -1);
                     });
-                    console.log(fileList);
                     Thesis.Gallery.loadGallery(fileList, s.step);
                 };
 
@@ -336,7 +334,7 @@ Thesis.Gallery = (function() {
                         draggable = $(event.currentTarget);
                         touch.currentPicObj = $(event.currentTarget);
                         
-                        Thesis.Messure.start("swipe-image");
+                        Thesis.Messure.start("swipe-image",10);
 
                         touch.nextPicObj.show();
                         touch.prevPicObj.show();
@@ -560,7 +558,6 @@ Thesis.Gallery = (function() {
             fullscreenContainers.bind("vmousemove touchmove", that.touchEvents.touchMove);
 
             $("#rotate-left").on("click", function(event) {
-                console.log("Rotate left.");
                 var canvas = that.touchEvents.currentPicObj.find("canvas")[0];
                 var imageObj = s.fullscreenImg[canvas.id];
 
@@ -568,7 +565,6 @@ Thesis.Gallery = (function() {
             });
 
             $("#rotate-right").on("click", function(event) {
-                console.log("Rotate right.");
                 var canvas = that.touchEvents.currentPicObj.find("canvas")[0];
                 var imageObj = s.fullscreenImg[canvas.id];
 
@@ -576,7 +572,6 @@ Thesis.Gallery = (function() {
             });
 
             $("#invert").on("click", function(event) {
-                console.log("Invert.");
                 var canvas = that.touchEvents.currentPicObj.find("canvas")[0];
                 var imageObj = s.fullscreenImg[canvas.id];
 
@@ -778,7 +773,7 @@ Thesis.Gallery = (function() {
         },
 
         rotateCanvas: function(canvas, imageObj, degrees) {
-            Thesis.Messure.start("rotate-image-" + imageObj.name);
+            Thesis.Messure.start("rotate-image-" + imageObj.name, 12);
             var ctx = canvas.getContext("2d").reset();
             var ratio = that.getRatio(imageObj.imageData);
             var rotation = degrees * Math.PI / 180;            
@@ -797,7 +792,7 @@ Thesis.Gallery = (function() {
         },
 
         invertCanvas: function(canvas, imageObj) {
-            Thesis.Messure.start("invert-image-" + imageObj.name);
+            Thesis.Messure.start("invert-image-" + imageObj.name, 2);
             var ctx = canvas.getContext("2d");
             var ratio = that.getRatio(imageObj.imageData);
             var rotation = imageObj.rotation;
@@ -1132,7 +1127,7 @@ Thesis.Firefox = (function() {
                 if (!file) {
                     callback(dirs);
                 } else {
-                    if (allowedFileTypes.indexOf(file.type) > -1 && file.name.indexOf("100MZLLA") != -1) {
+                     if (allowedFileTypes.indexOf(file.type) > -1 && file.name.indexOf("/sdcard/DCIM") != -1) {
                         var dir = {
                             name: file.name,
                             fullPath: window.URL.createObjectURL(file)
@@ -1262,7 +1257,11 @@ Thesis.Messure = (function() {
             s = this.settings;
         },
 
-        start: function(name) {
+        start: function(name, ack) {
+            if(ack === undefined) {
+                ack = -1;
+            }
+
             if (!s.enabled) {
                 return;
             }
@@ -1272,7 +1271,10 @@ Thesis.Messure = (function() {
                     name: name,
                     timeStart: 0,
                     timeEnd: 0,
-                    result: 0
+                    result: 0,
+                    avarage: 0,
+                    ack: ack,
+                    n: 0
                 }
             }
             if (s.clocks[name].timeStart === 0) {
@@ -1293,13 +1295,22 @@ Thesis.Messure = (function() {
             } else {
                 s.clocks[name].timeEnd = new Date().getTime();
                 var time = s.clocks[name].timeEnd - s.clocks[name].timeStart;
-                console.log(name + ": " + time + "ms");
-                s.clocks[name].result = time;
+                
+                s.clocks[name].avarage += time;
+                s.clocks[name].ack--;
+                s.clocks[name].n++;
+                s.clocks[name].result = time;  
                 s.clocks[name].timeStart = 0;
-                s.clocks[name].points = 0;
+                console.log(name + ": " + time + "ms");
+
+                if(s.clocks[name].ack == 0) {
+                    console.log(name + " avarage of the last " + s.clocks[name].n + ": " + s.clocks[name].avarage/s.clocks[name].n + "ms");
+                }
+                
                 if (Thesis.Settings.isDebug()) {
                     console.log("Messure clock: '" + name + "' stopped at " + s.clocks[name].timeEnd);
                 }
+                
             }
         },
 
