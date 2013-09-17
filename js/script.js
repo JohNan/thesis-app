@@ -228,11 +228,9 @@ Thesis.Gallery = (function() {
                     console.log("Refresh: " + fileList.length + " - " + s.fileList.length);
 
                     var diffArr = fileList.diff(s.fileList, 'name');
-                    console.log(diffArr.length);
                     if (diffArr.length > 0) {
                         console.log((fileList.length - s.fileList.length - 1));
                         for (var i = diffArr.length - 1; i >= 0; i--) {
-                            console.log(diffArr[i].name);
                             s.fileList.unshift(diffArr[i]);
                         }
 
@@ -1120,15 +1118,15 @@ Thesis.Firefox = (function() {
 
             cursor.onsuccess = function() {
                 var file = this.result;
+                
                 if (!file) {
                     callback(dirs);
                 } else {
-                    if (allowedFileTypes.indexOf(file.type) > -1) {
+                    if (allowedFileTypes.indexOf(file.type) > -1 && file.name.indexOf("100MZLLA") != -1) {
                         var dir = {
                             name: file.name,
                             fullPath: window.URL.createObjectURL(file)
                         }
-
                         dirs.push(dir);
                     }
                     this.
