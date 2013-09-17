@@ -800,7 +800,7 @@ Thesis.Gallery = (function() {
 
         invertCanvas: function(canvas, imageObj) {
             Thesis.Messure.start("invert-image-" + imageObj.name);
-            var ctx = canvas.getContext("2d").reset();
+            var ctx = canvas.getContext("2d");
             var ratio = that.getRatio(imageObj.imageData);
             var rotation = imageObj.rotation;
             var scale = imageObj.scale;
