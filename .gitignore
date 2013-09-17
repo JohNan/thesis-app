@@ -6,6 +6,12 @@ tmp/**
 tmp/**/*
 *.tmp
 *.bak
+index.html
+img/
+css/ima*
+css/jq*
+css/my*
+js/*mobile*
 *.swp
 *~.nib
 local.properties
