@@ -215,6 +215,14 @@ Thesis.Gallery = (function() {
             } else {
                 var printDirPath = function(fileList) {
                     Thesis.Gallery.bindUIActions(fileList);
+                    /* Sort the list in javascript. Needed since the directory listing on the devices
+                        use different orders.
+                    */
+                    fileList.sort(function (a, b) {
+                        a = a.name.replace(/^.*\/|\.[^.]*$/g, '');
+                        b = b.name.replace(/^.*\/|\.[^.]*$/g, '');
+                        return (a > b ? 1 : -1);
+                    });
                     Thesis.Gallery.loadGallery(fileList, s.step);
                 };
 
@@ -228,11 +236,9 @@ Thesis.Gallery = (function() {
                     console.log("Refresh: " + fileList.length + " - " + s.fileList.length);
 
                     var diffArr = fileList.diff(s.fileList, 'name');
-                    console.log(diffArr.length);
                     if (diffArr.length > 0) {
                         console.log((fileList.length - s.fileList.length - 1));
                         for (var i = diffArr.length - 1; i >= 0; i--) {
-                            console.log(diffArr[i].name);
                             s.fileList.unshift(diffArr[i]);
                         }
 
@@ -315,7 +321,7 @@ Thesis.Gallery = (function() {
                         var scale = touch.lastScale; 
                         that.scaleCanvas(canvas, imageObj, scale);
                         zoomed = true;                        
-                    } else {       
+                    } else {                        
                         move = {
                             X: 0,
                             Y: 0
@@ -328,6 +334,8 @@ Thesis.Gallery = (function() {
                         draggable = $(event.currentTarget);
                         touch.currentPicObj = $(event.currentTarget);
                         
+                        Thesis.Messure.start("swipe-image",10);
+
                         touch.nextPicObj.show();
                         touch.prevPicObj.show();
                     }
@@ -411,12 +419,13 @@ Thesis.Gallery = (function() {
                             if (offRight < center && offLeft < 0) {
                                 //slide out left
                                 if (s.fileList.length > currentImageIndex + 1) {
-                                    touch.currentPicObj.animate({
+                                    touch.slide({
+                                        "imgObj": touch.currentPicObj,
                                         "left": -touch.currentPicObj.width()
-                                    }, "fast");
-                                    touch.nextPicObj.animate({
+                                    }, {
+                                        "imgObj": touch.nextPicObj,
                                         "left": 0
-                                    }, "fast");
+                                    });                                    
 
                                     tmp = touch.currentPicObj;
                                     touch.currentPicObj = touch.nextPicObj;
@@ -435,22 +444,24 @@ Thesis.Gallery = (function() {
                                         touch.nextPicObj.find("canvas")[0].getContext("2d").reset();
                                     }
                                 } else {
-                                    touch.currentPicObj.animate({
+                                    touch.slide({
+                                        "imgObj": touch.currentPicObj,
                                         "left": 0
-                                    }, "fast");
-                                    touch.nextPicObj.animate({
+                                    }, {
+                                        "imgObj": touch.nextPicObj,
                                         "left": windowWidth
-                                    }, "fast");
+                                    });
                                 }
                             } else if (offLeft > center && offRight > s.windowWidth) {
                                 //slide out right                            
                                 if (currentImageIndex - 1 >= 0) {
-                                    touch.currentPicObj.animate({
+                                    touch.slide({
+                                        "imgObj": touch.currentPicObj,
                                         "left": windowWidth
-                                    }, "fast");
-                                    touch.prevPicObj.animate({
+                                    }, {
+                                        "imgObj": touch.prevPicObj,
                                         "left": 0
-                                    }, "fast");
+                                    });
 
                                     tmp = touch.currentPicObj;
                                     touch.currentPicObj = touch.prevPicObj;
@@ -469,38 +480,61 @@ Thesis.Gallery = (function() {
                                         touch.prevPicObj.find("canvas")[0].getContext("2d").reset();
                                     }
                                 } else {
-                                    touch.currentPicObj.animate({
+                                    touch.slide({
+                                        "imgObj": touch.currentPicObj,
                                         "left": 0
-                                    }, "fast");
-                                    touch.prevPicObj.animate({
+                                    }, {
+                                        "imgObj": touch.prevPicObj,
                                         "left": -windowWidth
-                                    }, "fast");
+                                    });
                                 }
 
                             } else if (offLeft < center && offRight > s.windowWidth) {
                                 //slide back from right
-                                touch.currentPicObj.animate({
+                                touch.slide({
+                                    "imgObj": touch.currentPicObj,
                                     "left": 0
-                                }, "fast");
-                                touch.prevPicObj.animate({
+                                }, {
+                                    "imgObj": touch.prevPicObj,
                                     "left": -windowWidth
-                                }, "fast");
+                                });                                
                             } else if (offLeft < 0 && offRight > center) {
                                 //slide back from left
-                                touch.currentPicObj.animate({
+                                touch.slide({
+                                    "imgObj": touch.currentPicObj,
                                     "left": 0
-                                }, "fast");
-                                touch.nextPicObj.animate({
+                                }, {
+                                    "imgObj": touch.nextPicObj,
                                     "left": windowWidth
-                                }, "fast");
+                                });
                             }
                         }
+
                         draggable = null;
                     }
                 },
 
-                transform: function (argument) {
-                    
+                slide: function (obj1, obj2) {
+                    var n = 0;
+                    obj1.imgObj.animate({
+                        "left": obj1.left
+                    }, "fast", function () {
+                        n++;
+
+                        if(n == 2) {
+                            Thesis.Messure.stop("swipe-image");
+                        }           
+                    });
+
+                    obj2.imgObj.animate({
+                        "left": obj2.left
+                    }, "fast", function () {
+                        n++;
+
+                        if(n == 2) {
+                            Thesis.Messure.stop("swipe-image");
+                        }           
+                    });                    
                 }
             }
         })(),
@@ -524,7 +558,6 @@ Thesis.Gallery = (function() {
             fullscreenContainers.bind("vmousemove touchmove", that.touchEvents.touchMove);
 
             $("#rotate-left").on("click", function(event) {
-                console.log("Rotate left.");
                 var canvas = that.touchEvents.currentPicObj.find("canvas")[0];
                 var imageObj = s.fullscreenImg[canvas.id];
 
@@ -532,7 +565,6 @@ Thesis.Gallery = (function() {
             });
 
             $("#rotate-right").on("click", function(event) {
-                console.log("Rotate right.");
                 var canvas = that.touchEvents.currentPicObj.find("canvas")[0];
                 var imageObj = s.fullscreenImg[canvas.id];
 
@@ -540,7 +572,6 @@ Thesis.Gallery = (function() {
             });
 
             $("#invert").on("click", function(event) {
-                console.log("Invert.");
                 var canvas = that.touchEvents.currentPicObj.find("canvas")[0];
                 var imageObj = s.fullscreenImg[canvas.id];
 
@@ -742,7 +773,7 @@ Thesis.Gallery = (function() {
         },
 
         rotateCanvas: function(canvas, imageObj, degrees) {
-            Thesis.Messure.start("rotate-image-" + imageObj.name);
+            Thesis.Messure.start("rotate-image-" + imageObj.name, 12);
             var ctx = canvas.getContext("2d").reset();
             var ratio = that.getRatio(imageObj.imageData);
             var rotation = degrees * Math.PI / 180;            
@@ -761,8 +792,8 @@ Thesis.Gallery = (function() {
         },
 
         invertCanvas: function(canvas, imageObj) {
-            Thesis.Messure.start("invert-image-" + imageObj.name);
-            var ctx = canvas.getContext("2d").reset();
+            Thesis.Messure.start("invert-image-" + imageObj.name, 2);
+            var ctx = canvas.getContext("2d");
             var ratio = that.getRatio(imageObj.imageData);
             var rotation = imageObj.rotation;
             var scale = imageObj.scale;
@@ -1092,15 +1123,15 @@ Thesis.Firefox = (function() {
 
             cursor.onsuccess = function() {
                 var file = this.result;
+                
                 if (!file) {
                     callback(dirs);
                 } else {
-                    if (allowedFileTypes.indexOf(file.type) > -1) {
+                    if (allowedFileTypes.indexOf(file.type) > -1 && file.name.indexOf("/sdcard/DCIM") != -1) {
                         var dir = {
                             name: file.name,
                             fullPath: window.URL.createObjectURL(file)
                         }
-
                         dirs.push(dir);
                     }
                     this.
@@ -1226,7 +1257,11 @@ Thesis.Messure = (function() {
             s = this.settings;
         },
 
-        start: function(name) {
+        start: function(name, ack) {
+            if(ack === undefined) {
+                ack = -1;
+            }
+
             if (!s.enabled) {
                 return;
             }
@@ -1236,7 +1271,10 @@ Thesis.Messure = (function() {
                     name: name,
                     timeStart: 0,
                     timeEnd: 0,
-                    result: 0
+                    result: 0,
+                    avarage: 0,
+                    ack: ack,
+                    n: 0
                 }
             }
             if (s.clocks[name].timeStart === 0) {
@@ -1257,12 +1295,22 @@ Thesis.Messure = (function() {
             } else {
                 s.clocks[name].timeEnd = new Date().getTime();
                 var time = s.clocks[name].timeEnd - s.clocks[name].timeStart;
-                console.log(name + ": " + time + "ms");
-                s.clocks[name].result = time;
+                
+                s.clocks[name].avarage += time;
+                s.clocks[name].ack--;
+                s.clocks[name].n++;
+                s.clocks[name].result = time;  
                 s.clocks[name].timeStart = 0;
+                console.log(name + ": " + time + "ms");
+
+                if(s.clocks[name].ack == 0) {
+                    console.log(name + " avarage of the last " + s.clocks[name].n + ": " + s.clocks[name].avarage/s.clocks[name].n + "ms");
+                }
+                
                 if (Thesis.Settings.isDebug()) {
                     console.log("Messure clock: '" + name + "' stopped at " + s.clocks[name].timeEnd);
                 }
+                
             }
         },
 
