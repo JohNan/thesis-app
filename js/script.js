@@ -72,6 +72,7 @@ Thesis.Gallery = (function() {
     var that = null;
     var currentZoom = 1.0;
     var lastDist = null;
+    var total = 0;
 
     return {
         settings: {
@@ -234,7 +235,7 @@ Thesis.Gallery = (function() {
                     var preLength = s.fileList.length;
 
                     console.log("Refresh: " + fileList.length + " - " + s.fileList.length);
-
+                    
                     var diffArr = fileList.diff(s.fileList, 'name');
                     if (diffArr.length > 0) {
                         console.log((fileList.length - s.fileList.length - 1));
@@ -246,7 +247,6 @@ Thesis.Gallery = (function() {
                         var tmpMax = s.max;
                         s.min = 0;
                         s.max = diffArr.length;
-                        console.log(s.max);
                         Thesis.Gallery.loadGallery(fileList, 0, true);
                         s.min = tmpMin;
                         s.max = tmpMax;
@@ -547,8 +547,8 @@ Thesis.Gallery = (function() {
             $(window).scroll(function() {
                 var g = Thesis.Gallery;
                 if ($(window).scrollTop() == $(document).height() - $(window).height()) {
+                    Thesis.Messure.start("load-gallery");
                     g.loadGallery(g.settings.fileList, g.settings.step);
-
                 }
             });
             
@@ -620,6 +620,14 @@ Thesis.Gallery = (function() {
                 if(Thesis.Settings.isFireFox()) {
                     $("#backbutton").show();
                 }
+            });
+
+            $("#memory-button").on("click", function(event) {
+                if(that.Memory.isRunning()) {
+                    that.Memory.stop();    
+                } else {
+                    that.Memory.start();
+                }                
             });
         },
         
@@ -820,8 +828,7 @@ Thesis.Gallery = (function() {
             var ctx = [];
             var imageObj = [];
             var min = s.min;
-            var max = s.max;
-            var total = 0;
+            var max = s.max;            
 
             if (s.fileList.length == 0) {
                 s.fileList = images;
@@ -863,11 +870,6 @@ Thesis.Gallery = (function() {
                         var destWidth = Math.floor(canvas[n].width);
                         var destHeight = Math.floor(canvas[n].height);
                         
-                       /* console.log("id: " + n + " : " + sourceX + " : " + sourceY + " : " + sourceWidth + " : " + sourceHeight
-                                + " : " + destX + " : " + destY
-                                + " : " + destWidth + " : " + destHeight
-                            );*/
-
                         ctx[n].drawImage(imageObj[n], sourceX, sourceY, sourceWidth, sourceHeight, destX, destY, destWidth, destHeight);
                         total++;
                         //Need to wait untill al images have been loaded before stopping the
@@ -900,7 +902,71 @@ Thesis.Gallery = (function() {
                     foo();
                 }
             }
-        }
+        },
+        Memory: (function () {
+            var memory = [ ];
+            var nextChunkMB = 32;
+            var totalAllocMB = 0;
+            var timer = false;
+            var totalGfxMB = 0;
+
+            return {
+                foo: function(e) {
+                    e.onclick = function() { alert(e.innerHTML)};
+                },                                
+                alloc: function() {
+                    var allocSizeMB = nextChunkMB * 1024 * 1024;                                        
+
+                    var array = new ArrayBuffer(allocSizeMB);
+                    var view = new Int32Array(array);
+
+                    for (var j = 0; j < view.length; j += 1024) {
+                        view[j] = 42;
+                    }
+
+                    totalAllocMB += nextChunkMB;
+                    console.log("Allocated "+ nextChunkMB +"MB. Total allocated: "+ totalAllocMB+ "MB");
+                    $("#memory-output").text("Allocated "+ nextChunkMB +"MB. Total allocated: "+ totalAllocMB+ "MB");
+
+                    if (nextChunkMB > 1) {
+                        nextChunkMB >>= 1
+                    }
+
+                    //memory.push(array);
+                    return array;
+                },
+                leak: function() {
+                    $('<div/>')
+                        .html(new Array(1000).join('text')) 
+                        .click(function() { });
+                    totalAllocMB++;
+                    $("#memory-output").text("Total divs allocated: "+ totalAllocMB);
+                },
+                start: function () {
+                    $('<div/>', {
+                        id: 'memory-output',
+                    })
+                    .css("position","fixed")
+                    .css("top","60px")
+                    .css("height","30px")
+                    .css("background-color","green")
+                    .appendTo($("body"));
+
+                    timer = setInterval(this.leak,10);   
+                    console.log("Memory alloc started.");
+                },
+
+                stop: function () {
+                    clearInterval(timer);
+                    timer = false;
+                    console.log("Memory alloc stopped.");
+                }, 
+
+                isRunning: function () {
+                    return timer;
+                }   
+            }
+        })()
     }
 }(jQuery));
 
