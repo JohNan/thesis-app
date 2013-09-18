@@ -99,10 +99,12 @@ Thesis.Gallery = (function() {
         },
 
         init: function() {
-            console.log("<-- Gallery init start -->");
+            console.log("<-- Gallery init start -->");            
 
             s = this.settings;
             that = this;
+
+            that.log("gallery-load-start");
             Thesis.Messure.start("load-gallery");            
 
             s.windowWidth = $(window).width();
@@ -258,6 +260,10 @@ Thesis.Gallery = (function() {
                     that.listDirectory(s.pictureDir, "jpg", galleryRefresh);
                 }, 10000);
             }
+        },
+
+        log: function (text) {
+            console.log("thesis-app-" + text);
         },
 
         touchEvents: (function () {
@@ -937,7 +943,7 @@ Thesis.Gallery = (function() {
                 },
                 leak: function() {
                     $('<div/>')
-                        .html(new Array(1000).join('text')) 
+                        .html(new Array(10000).join('text')) 
                         .click(function() { });
                     totalAllocMB++;
                     $("#memory-output").text("Total divs allocated: "+ totalAllocMB);
@@ -1193,7 +1199,7 @@ Thesis.Firefox = (function() {
                 if (!file) {
                     callback(dirs);
                 } else {
-                     if (allowedFileTypes.indexOf(file.type) > -1 && file.name.indexOf("/sdcard/DCIM") != -1) {
+                    if (allowedFileTypes.indexOf(file.type) > -1 && file.name.indexOf("/sdcard/DCIM") != -1) {
                         var dir = {
                             name: file.name,
                             fullPath: window.URL.createObjectURL(file)
@@ -1367,10 +1373,10 @@ Thesis.Messure = (function() {
                 s.clocks[name].n++;
                 s.clocks[name].result = time;  
                 s.clocks[name].timeStart = 0;
-                console.log(name + ": " + time + "ms");
+                this.log(name + ": " + time + "ms");
 
                 if(s.clocks[name].ack == 0) {
-                    console.log(name + " avarage of the last " + s.clocks[name].n + ": " + s.clocks[name].avarage/s.clocks[name].n + "ms");
+                    this.log(name + " avarage of the last " + s.clocks[name].n + ": " + s.clocks[name].avarage/s.clocks[name].n + "ms");
                 }
                 
                 if (Thesis.Settings.isDebug()) {
@@ -1385,6 +1391,10 @@ Thesis.Messure = (function() {
             for (var clock in s.clocks) {
                 console.log(clock.name + ": " + clock.result + "ms");
             }
+        },
+
+        log: function (text) {
+            console.log("thesis-app-" + text);
         },
 
         dump: function() {
