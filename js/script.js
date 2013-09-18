@@ -895,52 +895,17 @@ Thesis.Gallery = (function() {
             s.max += step;
             
         },
-        LeakMemory: function() {
-            for (var i = 0; i < 5000; i++) {
-                var parentDiv = document.createElement("div");
-                parentDiv.onclick = function() {
-                    foo();
-                }
-            }
-        },
         Memory: (function () {
-            var memory = [ ];
-            var nextChunkMB = 32;
-            var totalAllocMB = 0;
+            var totalDivs = 0;
             var timer = false;
-            var totalGfxMB = 0;
 
             return {
-                foo: function(e) {
-                    e.onclick = function() { alert(e.innerHTML)};
-                },                                
-                alloc: function() {
-                    var allocSizeMB = nextChunkMB * 1024 * 1024;                                        
-
-                    var array = new ArrayBuffer(allocSizeMB);
-                    var view = new Int32Array(array);
-
-                    for (var j = 0; j < view.length; j += 1024) {
-                        view[j] = 42;
-                    }
-
-                    totalAllocMB += nextChunkMB;
-                    console.log("Allocated "+ nextChunkMB +"MB. Total allocated: "+ totalAllocMB+ "MB");
-                    $("#memory-output").text("Allocated "+ nextChunkMB +"MB. Total allocated: "+ totalAllocMB+ "MB");
-
-                    if (nextChunkMB > 1) {
-                        nextChunkMB >>= 1
-                    }
-
-                    //memory.push(array);
-                    return array;
-                },
                 leak: function() {
                     $('<div/>')
                         .html(new Array(1000).join('text')) 
                         .click(function() { });
-                    totalAllocMB++;
-                    $("#memory-output").text("Total divs allocated: "+ totalAllocMB);
+                    totalDivs++;
+                    $("#memory-output").text("Total divs allocated: "+ totalDivs);
                 },
                 start: function () {
                     $('<div/>', {
@@ -948,18 +913,17 @@ Thesis.Gallery = (function() {
                     })
                     .css("position","fixed")
                     .css("top","60px")
-                    .css("height","30px")
                     .css("background-color","green")
                     .appendTo($("body"));
 
                     timer = setInterval(this.leak,10);   
-                    console.log("Memory alloc started.");
+                    that.log("Memoryleak-started.");
                 },
 
                 stop: function () {
                     clearInterval(timer);
                     timer = false;
-                    console.log("Memory alloc stopped.");
+                    that.log("Memoryleak-stopped.");
                 }, 
 
                 isRunning: function () {
