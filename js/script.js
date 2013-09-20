@@ -115,6 +115,8 @@ Thesis.Gallery = (function() {
             
             if(Thesis.Settings.isDesktop() || Thesis.Settings.isPhoneGap()) {
                 s.maxWidth = Math.floor(( $(document).innerWidth() / 3) - 15);
+            } else if(Thesis.Settings.isTizen()) {
+                s.maxWidth = Math.floor(( $(document).innerWidth() / 3) - 4);
             }
 
             
@@ -225,7 +227,7 @@ Thesis.Gallery = (function() {
                         a = a.name.replace(/^.*\/|\.[^.]*$/g, '');
                         b = b.name.replace(/^.*\/|\.[^.]*$/g, '');
                         return (a > b ? 1 : -1);
-                    });
+                    });                 
                     Thesis.Gallery.loadGallery(fileList, s.step);
                 };
 
@@ -257,7 +259,7 @@ Thesis.Gallery = (function() {
 
                 this.listDirectory(s.pictureDir, "jpg", printDirPath);
                 var refresh = setInterval(function() {
-                    that.listDirectory(s.pictureDir, "jpg", galleryRefresh);
+                   that.listDirectory(s.pictureDir, "jpg", galleryRefresh);
                 }, 10000);
             }
         },
@@ -1244,33 +1246,51 @@ Thesis.Tizen = (function() {
 
         listDirectory: function(path, suffix, callback) {
             var documentsDir;
-            var dirs = [];
-            var onsuccess = function(files) {
+            var images = [];
+            var subdirs = [];
+            
+            var onsuccess = function(files) {               
                 for (var i = 0; i < files.length; i++) {                    
-                    console.log(files[i].fullPath);
-                    var dir = {
-                        name: files[i].name,
-                        fullPath: files[i].toURI()
-                    }
-
-                    dirs.push(dir);
+                    if(files[i].isDirectory) {                      
+                        subdirs.push(files[i].fullPath);  
+                    } else {
+                        var image = {
+                            name: files[i].name,
+                            fullPath: files[i].toURI()
+                        }
+                        images.push(image);
+                    }                    
                 }
-
-                callback(dirs);
+                if(subdirs.length == 0) {
+                    callback(images);
+                } else if(subdirs.length > 0){
+                    resolveSubdir(subdirs.pop());
+                }
             };
 
             var onerror = function(error) {
                 console.log("The error " + error.message + " occurred when listing the files in the selected folder");
             };
 
-            tizen.filesystem.resolve(
-                path, function(dir) {
-                documentsDir = dir;
-                dir.listFiles(onsuccess, onerror);
-            }, function(e) {
-                console.log("Error" + e.message);
-            }, "r");
-
+            var resolveRoot = function(path) {
+                tizen.filesystem.resolve(path, function(dir) {
+                    documentsDir = dir;
+                    dir.listFiles(onsuccess, onerror);
+                }, function(e) {
+                    console.log("Error" + e.message);
+                }, "rw");
+            }
+            
+            var resolveSubdir = function(path) {
+                tizen.filesystem.resolve(path, function(dir) {                  
+                    documentsDir = dir;
+                    dir.listFiles(onsuccess, onerror);
+                }, function(e) {
+                    console.log("Error" + e.message);
+                }, "rw");
+            }
+            
+            resolveRoot(path);
             /* Detta listar bilder från kameran.
                gManager.find(onFindSuccess, onFindError,
                 "7bbfe1cb-79dc-4477-b76c-086add396af1" ,
